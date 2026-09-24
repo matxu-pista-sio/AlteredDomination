@@ -170,10 +170,13 @@ alpha-beta** search over the battle state:
   generals   = kGeneralValue · (ownGenerals − enemyGenerals)      // 400 each
   threats    = − kThreat · (own generals strikeable next turn)     // 150 each
              + kThreat · (enemy generals strikeable now)
-  advance    = − kAdvance · Σ over own non-general units of
-                 Manhattan distance to the nearest enemy general   // 1 each
-  mobility   = kMobility · (own legal actions − enemy legal actions) // 0.5 each
+  advance    = kAdvance · (Σ enemy non-generals' distance to my nearest general
+                 − Σ own non-generals' distance to the nearest enemy general) // 1 each
+             // zero-sum, so eval(pov) == −eval(other) and negamax stays honest
   ```
+
+  (A mobility term was tried and dropped: counting every legal action of
+  both sides per node cost more than the depth it bought.)
 
   Terminal states score `±kMate` (100 000) adjusted by depth so faster
   mates win.
@@ -193,7 +196,7 @@ alpha-beta** search over the battle state:
 
 | Budget | Max nodes per action | Used by |
 |---|---|---|
-| `Quick` | 4 000 | AI-vs-AI auto-resolve |
+| `Quick` | greedy: the best of the first 8 ordered actions by static evaluation, no look-ahead | AI-vs-AI auto-resolve (hundreds of battles a round) |
 | `Easy` | 3 000 | difficulty Easy vs the human |
 | `Normal` | 25 000 | difficulty Normal, the human's own auto-resolve |
 | `Hard` | 150 000 | difficulty Hard |

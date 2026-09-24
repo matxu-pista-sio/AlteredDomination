@@ -75,8 +75,13 @@ Campaign::Campaign(const World& world, const Catalog& catalog, CampaignSettings 
   worldIncome_ = 0;
   for (const int v : baseIncome_) worldIncome_ += v;
 
-  // -- starting funds -----------------------------------------------------------
+  // -- starting funds and the home guard ----------------------------------------
   for (auto& p : players_) p.funds = kStartingRounds * playerIncome(p.country);
+  const UnitTypeId soldier = catalog_->byKey("soldier").value_or(0);
+  for (const auto& c : cities) {
+    const int guard = kHomeGuardBase + c.tier + (c.capital ? kHomeGuardCapitalBonus : 0);
+    for (int i = 0; i < guard; ++i) spawn(soldier, c.id);
+  }
 
   // -- turn order: humans in seating order, then the AIs shuffled once ---------
   order_ = humans;

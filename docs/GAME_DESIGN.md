@@ -83,6 +83,10 @@ tables** (§8.4):
   income is paid to every surviving country at the **start of the round**
   (§4), then the round's turns follow.
 - Income belongs to whoever owns the city at the moment it is paid.
+- **Home guard**: every city starts with `kHomeGuardBase + tier` free
+  soldiers (`2`, so 2–5), capitals with `kHomeGuardCapitalBonus = 2` more.
+  Nothing is undefended on round one, so the first conquests are fought on
+  the board rather than walked into.
 - **Capital loot**: when a country loses **its own** capital (the city the
   world data marks as such, taken from the country it belongs to),
   `kCapitalLoot = 50 %` of that country's funds transfers to the conqueror
@@ -297,6 +301,7 @@ never time-limited, for the same reason.
 | `kMinCountryBudget` / `kMinCityIncome` | 12 / 2 | §3 |
 | `kEqualIncome` | 60 | §3 |
 | `kStartingRounds` | 3 | §3 |
+| `kHomeGuardBase` / `kHomeGuardCapitalBonus` | 2 / 2 | §3 |
 | `kCapitalLootPercent` | 50 | §3 |
 | `kBattleSideCap` | 48 | §5.3 |
 | `kBoardLength` | 14 | §8.1 |

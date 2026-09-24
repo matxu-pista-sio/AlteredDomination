@@ -17,6 +17,9 @@ inline constexpr double kCityShareExponent = 0.75;
 inline constexpr double kCapitalIncomeBonus = 1.25;
 inline constexpr int kEqualIncome = 60;
 inline constexpr int kStartingRounds = 3;
+// §3 home guard: free soldiers every city starts with (2 + tier, capitals +2)
+inline constexpr int kHomeGuardBase = 2;
+inline constexpr int kHomeGuardCapitalBonus = 2;
 inline constexpr int kCapitalLootPercent = 50;
 
 // §5.3 attacks
