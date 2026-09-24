@@ -79,12 +79,15 @@ tables** (§8.4):
     earns at least `kMinCityIncome = 2`.
   - **Equality mode**: every city earns `kEqualIncome = 60`.
 - **Funds** are per country, integer, never negative. A country starts with
-  `kStartingRounds = 3` rounds of income. Income is paid to every surviving
-  country at the **start of a round** (§4), then the round's turns follow.
+  `kStartingRounds = 3` rounds of income banked. From the second round on,
+  income is paid to every surviving country at the **start of the round**
+  (§4), then the round's turns follow.
 - Income belongs to whoever owns the city at the moment it is paid.
-- **Capital loot**: when a country's capital changes hands, `kCapitalLoot =
-  50 %` of the loser's funds transfers to the conqueror (rounded down). The
-  city stays that country's capital marker for the rest of the game.
+- **Capital loot**: when a country loses **its own** capital (the city the
+  world data marks as such, taken from the country it belongs to),
+  `kCapitalLoot = 50 %` of that country's funds transfers to the conqueror
+  (rounded down). Taking the same city from a later occupier loots nothing.
+  The city stays that country's capital marker for the rest of the game.
 
 ## 4. Rounds and turns
 
@@ -99,9 +102,11 @@ counter starts at 1.
   the start of that player's turn. Moving or attacking sets it; a unit acts
   **once per round**. Recruited units arrive with `acted = false`, so they
   can defend, move or attack the same turn (tempo is a feature).
-- End of round: countries with no cities are **eliminated** (their player
-  is removed, their remaining funds vanish); victory (§9) is checked; the
-  round counter increments.
+- A country whose last city falls is **eliminated at once**: its player is
+  skipped from then on and its remaining funds vanish. When the last human
+  is eliminated the game is over (§9).
+- End of round: victory (§9) is checked; the round counter increments;
+  income is paid.
 
 ## 5. Actions
 
@@ -135,9 +140,11 @@ units are marked acted whatever happens.
   - *defender wins* — the surviving attackers return to `fromCity`;
   - *draw* — both sides keep their survivors where they were.
 - **Battle cap**: at most `kBattleSideCap = 48` units per side take part.
-  When a side has more, the `48` most expensive fight and the rest sit out
-  (they survive, and for the defender they stay in the city). The attacking
-  player chooses which units attack, so the cap only ever trims a defender.
+  An attack listing more than `48` units is refused (`ErrForceTooLarge`):
+  the attacking player chooses the force, so the cap only ever trims a
+  defender. When the defender has more, the `48` most expensive fight and
+  the rest sit out; if the city falls, the units that sat out die with it,
+  otherwise they are untouched.
 - Capture never destroys the captured city's buildings — there are none;
   only ownership and units change.
 
@@ -257,7 +264,8 @@ never time-limited, for the same reason.
 
 ## 9. Victory and defeat
 
-- A human player **loses** when eliminated (§4).
+- A human player **loses** when eliminated (§4); when every human is
+  eliminated the campaign ends at once with no winner.
 - A human player **wins** when, at the end of a round, they own cities whose
   income sums to at least `kDominationShare = 60 %` of the world's total
   income, or every city. In hotseat the first human to reach it wins.
