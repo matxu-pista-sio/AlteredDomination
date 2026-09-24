@@ -13,6 +13,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QWheelEvent>
+#include <qpa/qwindowsysteminterface.h>
 
 #include <iostream>
 #include <string>
@@ -28,13 +29,23 @@ QQuickWindow* driveWindow(QQmlApplicationEngine* engine) {
 
 void reply(const QString& line) { std::cout << line.toStdString() << std::endl; }
 
+// Input goes in through the window-system interface, the same door real
+// mice and keyboards use, so overlays (popups) and event filters
+// (Flickable) see exactly what they would see from a user.
+void mouse(QQuickWindow* win, QEvent::Type type, const QPointF& pos, Qt::MouseButtons buttons, Qt::MouseButton button) {
+  QWindowSystemInterface::handleMouseEvent<QWindowSystemInterface::SynchronousDelivery>(
+      win, pos, win->mapToGlobal(pos), buttons, button, type, Qt::NoModifier);
+}
+
 void postClick(QQuickWindow* win, const QPointF& pos, Qt::MouseButton button) {
-  const QPointF global = win->mapToGlobal(pos);
-  QCoreApplication::postEvent(win, new QMouseEvent(QEvent::MouseMove, pos, global, Qt::NoButton, Qt::NoButton, Qt::NoModifier));
-  QCoreApplication::postEvent(win, new QMouseEvent(QEvent::MouseButtonPress, pos, global, button, button, Qt::NoModifier));
-  QTimer::singleShot(60, win, [win, pos, global, button] {
-    QCoreApplication::postEvent(win, new QMouseEvent(QEvent::MouseButtonRelease, pos, global, button, Qt::NoButton, Qt::NoModifier));
-  });
+  mouse(win, QEvent::MouseMove, pos, Qt::NoButton, Qt::NoButton);
+  mouse(win, QEvent::MouseButtonPress, pos, button, button);
+  QTimer::singleShot(60, win, [win, pos, button] { mouse(win, QEvent::MouseButtonRelease, pos, Qt::NoButton, button); });
+}
+
+void key(QQuickWindow* win, int keyCode, Qt::KeyboardModifiers mods, const QString& text) {
+  QWindowSystemInterface::handleKeyEvent<QWindowSystemInterface::SynchronousDelivery>(win, QEvent::KeyPress, keyCode, mods, text);
+  QWindowSystemInterface::handleKeyEvent<QWindowSystemInterface::SynchronousDelivery>(win, QEvent::KeyRelease, keyCode, mods, text);
 }
 
 void runCommand(QQmlApplicationEngine* engine, const QString& line) {
@@ -71,13 +82,13 @@ void runCommand(QQmlApplicationEngine* engine, const QString& line) {
               cmd == QLatin1String("click") ? Qt::LeftButton : Qt::RightButton);
     reply(QStringLiteral("ok %1 %2 %3").arg(cmd, parts[1], parts[2]));
   } else if (cmd == QLatin1String("move") && parts.size() == 3) {
-    const QPointF pos(parts[1].toDouble(), parts[2].toDouble());
-    QCoreApplication::postEvent(win, new QMouseEvent(QEvent::MouseMove, pos, win->mapToGlobal(pos), Qt::NoButton, Qt::NoButton, Qt::NoModifier));
+    mouse(win, QEvent::MouseMove, QPointF(parts[1].toDouble(), parts[2].toDouble()), Qt::NoButton, Qt::NoButton);
     reply(QStringLiteral("ok move"));
   } else if (cmd == QLatin1String("wheel") && parts.size() == 4) {
     const QPointF pos(parts[1].toDouble(), parts[2].toDouble());
     const int delta = parts[3].toInt();
-    QCoreApplication::postEvent(win, new QWheelEvent(pos, win->mapToGlobal(pos), QPoint(), QPoint(0, delta), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false));
+    QWindowSystemInterface::handleWheelEvent(win, pos, win->mapToGlobal(pos), QPoint(), QPoint(0, delta), Qt::NoModifier);
+    QWindowSystemInterface::flushWindowSystemEvents();
     reply(QStringLiteral("ok wheel"));
   } else if (cmd == QLatin1String("size") && parts.size() == 3) {
     win->resize(parts[1].toInt(), parts[2].toInt());
@@ -90,8 +101,7 @@ void runCommand(QQmlApplicationEngine* engine, const QString& line) {
   } else if (cmd == QLatin1String("type") && parts.size() >= 2) {
     if (!win->isActive()) win->requestActivate();
     const QString text = line.mid(line.indexOf(QLatin1Char(' ')) + 1);
-    QCoreApplication::postEvent(win, new QKeyEvent(QEvent::KeyPress, 0, Qt::NoModifier, text));
-    QCoreApplication::postEvent(win, new QKeyEvent(QEvent::KeyRelease, 0, Qt::NoModifier, text));
+    for (const QChar c : text) key(win, 0, Qt::NoModifier, QString(c));
     reply(QStringLiteral("ok type"));
   } else if (cmd == QLatin1String("key") && parts.size() == 2) {
     const QKeySequence seq(parts[1]);
@@ -100,10 +110,8 @@ void runCommand(QQmlApplicationEngine* engine, const QString& line) {
       return;
     }
     if (!win->isActive()) win->requestActivate();
-    const int key = seq[0].key();
     const QString text = parts[1].size() == 1 ? parts[1] : QString();
-    QCoreApplication::postEvent(win, new QKeyEvent(QEvent::KeyPress, key, seq[0].keyboardModifiers(), text));
-    QCoreApplication::postEvent(win, new QKeyEvent(QEvent::KeyRelease, key, seq[0].keyboardModifiers(), text));
+    key(win, seq[0].key(), seq[0].keyboardModifiers(), text);
     reply(QStringLiteral("ok key %1").arg(parts[1]));
   } else if (cmd == QLatin1String("page") && parts.size() == 2) {
     QVariant ret;

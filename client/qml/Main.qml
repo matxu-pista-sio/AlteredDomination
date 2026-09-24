@@ -22,6 +22,9 @@ ApplicationWindow {
     font.family: Style.bodyFamily
     font.pixelSize: Style.fontBody
 
+    // for the headless driver's `eval` (devdrive.h): the controller by name
+    readonly property QtObject game: GameController
+
     Settings {
         id: windowSettings
         category: "window"
@@ -37,6 +40,15 @@ ApplicationWindow {
     }
     function open(page) { stack.push(page) }
     function back() { if (stack.depth > 1) stack.pop() }
+    function startCampaign() {
+        stack.clear()
+        stack.push(campaignPage)
+        Audio.music("map")
+    }
+    function leaveCampaign() {
+        GameController.leaveGame()
+        toHome()
+    }
 
     // The headless driver's `page <name>` (devdrive.h): jump anywhere.
     function devPage(name) {
@@ -48,6 +60,29 @@ ApplicationWindow {
         case "settings": toHome(); stack.push(settingsPage); return true
         case "codex": toHome(); stack.push(codexPage); return true
         case "gallery": toHome(); stack.push(galleryPage); return true
+        case "campaign":
+            if (!GameController.active)
+                GameController.newGame(GameController.randomCountryKey(), "gdp", "normal", "7", [])
+            startCampaign()
+            return true
+        case "campaign-fr":
+            if (!GameController.active) GameController.newGame("fr", "gdp", "normal", "7", [])
+            startCampaign()
+            return true
+        case "battle": {
+            // a scripted assault from the French capital on its first defended neighbour
+            if (!GameController.active) GameController.newGame("fr", "gdp", "normal", "7", [])
+            startCampaign()
+            const from = GameController.capitalOf("fr")
+            const targets = GameController.attackTargets(from)
+            let target = null
+            for (const t of targets) if (!t.undefended) { target = t; break }
+            if (!target) return false
+            const ids = GameController.unitsOf(from).map(u => u.id)
+            if (GameController.attack(from, target.id, ids) !== "needs-battle") return false
+            GameController.acceptBattle(false)
+            return true
+        }
         }
         return false
     }
@@ -68,17 +103,37 @@ ApplicationWindow {
         id: newGamePage
         NewGame {
             onBack: root.back()
-            onStarted: toasts.show("The campaign page lands with the map work", "info")
+            onStarted: root.startCampaign()
         }
     }
     Component {
         id: loadPage
         LoadGame {
             onBack: root.back()
-            onLoaded: toasts.show("The campaign page lands with the map work", "info")
+            onLoaded: root.startCampaign()
         }
     }
     Component { id: settingsPage; SettingsView { onBack: root.back() } }
+    Component {
+        id: campaignPage
+        Campaign {
+            onMenu: root.leaveCampaign()
+            onOpenSettings: root.open(settingsPage)
+        }
+    }
+    Component {
+        id: battlePage
+        Battle {
+            onFinished: { root.back(); Audio.music("map") }
+        }
+    }
+    Connections {
+        target: GameController
+        function onBattleRequested() {
+            stack.push(battlePage)
+            Audio.music("battle")
+        }
+    }
     Component { id: codexPage; Codex { onBack: root.back() } }
     Component { id: galleryPage; Gallery { onBack: root.back() } }
 

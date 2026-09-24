@@ -4,7 +4,7 @@
 # (docs/ARCHITECTURE.md, "C++ <-> QML bridge"). The rules live in ad::core.
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS
-  Core Gui Qml Quick QuickControls2 Svg Multimedia Concurrent ShaderTools)
+  Core Gui GuiPrivate Qml Quick QuickControls2 Svg Multimedia Concurrent ShaderTools)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -79,6 +79,7 @@ set(AD_COMPONENTS
   SectionHeader.qml
   Toast.qml
   ToastStrip.qml
+  UnitCard.qml
   UnitTile.qml
 )
 list(TRANSFORM AD_COMPONENTS PREPEND qml/components/
@@ -110,6 +111,23 @@ set(AD_PAGES
   SettingsView.qml
   Codex.qml
   Gallery.qml
+  Ocean.qml
+  CityMarker.qml
+  WorldMap.qml
+  TopBar.qml
+  CitySheet.qml
+  RankingPanel.qml
+  ForcePicker.qml
+  BattlePrompt.qml
+  GameOverOverlay.qml
+  InGameMenu.qml
+  CitySearch.qml
+  Campaign.qml
+  UnitChip.qml
+  BoardCell.qml
+  Projectile.qml
+  BattleResult.qml
+  Battle.qml
 )
 list(TRANSFORM AD_PAGES PREPEND qml/ OUTPUT_VARIABLE AD_PAGES_QML)
 
@@ -186,6 +204,8 @@ target_link_libraries(altereddomination PRIVATE
   Qt6::Svg
   Qt6::Multimedia
   Qt6::Concurrent
+  # devdrive injects input through the QPA interface (qpa/qwindowsysteminterface.h)
+  Qt6::GuiPrivate
 )
 
 target_compile_definitions(altereddomination PRIVATE
