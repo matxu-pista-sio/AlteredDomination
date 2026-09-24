@@ -11,8 +11,8 @@
 </defs>
 <g filter="url(#glow)">
   <path d="M32 6 L38 26 L58 46 L40 44 L36 54 L28 54 L24 44 L6 46 L26 26 Z" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M32 12 L32 52" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke-opacity="0.6"/>
-  <path d="M28 54 L26 60 M36 54 L38 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 12 L32 52" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke-opacity="0.6"/>
+  <path d="M28 54 L26 60 M36 54 L38 60" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
   <circle cx="32" cy="20" r="3" fill="#ffffff"/>
 </g>
 </svg>

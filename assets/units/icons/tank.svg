@@ -13,7 +13,7 @@
   <rect x="8" y="38" width="48" height="12" rx="6" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M14 38 L18 28 L46 28 L50 38" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M24 28 L26 20 L40 20 L42 28" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M40 23 L60 19" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <path d="M40 23 L60 19" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
   <circle cx="16" cy="44" r="2" fill="#ffffff"/><circle cx="26" cy="44" r="2" fill="#ffffff"/><circle cx="36" cy="44" r="2" fill="#ffffff"/><circle cx="46" cy="44" r="2" fill="#ffffff"/>
 </g>
 </svg>

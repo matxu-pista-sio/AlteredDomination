@@ -37,7 +37,8 @@ DEFS = """<defs>
   </filter>
 </defs>"""
 
-S = 'fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'
+S0 = 'fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round"'
+S = S0 + ' stroke-width="3"'
 F = 'fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"'
 
 
@@ -58,12 +59,12 @@ GLYPHS = {
         f'<circle cx="26" cy="26" r="13" {S}/>',
         f'<path d="M26 8 L26 17 M26 35 L26 44 M8 26 L17 26 M35 26 L44 26" {S}/>',
         f'<circle cx="26" cy="26" r="2.5" fill="#ffffff"/>',
-        f'<path d="M36 40 L58 58" {S} stroke-width="4"/>',
+        f'<path d="M36 40 L58 58" {S0} stroke-width="4"/>',
         f'<path d="M46 44 L52 44" {S}/>',
     ],
     # shoulder tube with a rocket leaving it
     "rocketlauncher": [
-        f'<path d="M10 44 L42 20" {S} stroke-width="7"/>',
+        f'<path d="M10 44 L42 20" {S0} stroke-width="7"/>',
         f'<path d="M10 44 L42 20" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2" fill="none"/>',
         f'<path d="M44 18 L56 9 L52 21 Z" {F}/>',
         f'<path d="M14 52 Q20 46 26 50 Q30 42 36 46" {S} stroke-opacity="0.7"/>',
@@ -73,7 +74,7 @@ GLYPHS = {
     "artillery": [
         wheel(22, 46, 8),
         f'<path d="M22 46 L8 54" {S}/>',
-        f'<path d="M22 46 L54 14" {S} stroke-width="5"/>',
+        f'<path d="M22 46 L54 14" {S0} stroke-width="5"/>',
         f'<path d="M48 20 L54 26" {S}/>',
         f'<path d="M30 34 L38 42" {S} stroke-opacity="0.6"/>',
     ],
@@ -89,7 +90,7 @@ GLYPHS = {
         f'<rect x="8" y="38" width="48" height="12" rx="6" {F}/>',
         f'<path d="M14 38 L18 28 L46 28 L50 38" {F}/>',
         f'<path d="M24 28 L26 20 L40 20 L42 28" {F}/>',
-        f'<path d="M40 23 L60 19" {S} stroke-width="4"/>',
+        f'<path d="M40 23 L60 19" {S0} stroke-width="4"/>',
         '<circle cx="16" cy="44" r="2" fill="#ffffff"/><circle cx="26" cy="44" r="2" fill="#ffffff"/>'
         '<circle cx="36" cy="44" r="2" fill="#ffffff"/><circle cx="46" cy="44" r="2" fill="#ffffff"/>',
     ],
@@ -109,28 +110,28 @@ GLYPHS = {
         f'<path d="M32 24 L32 18" {S}/>',
         f'<path d="M48 32 L60 30 L60 22" {S}/>',
         f'<path d="M20 46 L44 46 M22 40 L22 46 M42 40 L42 46" {S}/>',
-        f'<path d="M12 36 L6 42 M6 36 L12 42" {S} stroke-width="2"/>',
+        f'<path d="M12 36 L6 42 M6 36 L12 42" {S0} stroke-width="2"/>',
     ],
     # truck with an angled box of rocket tubes
     "mlrs": [
         f'<rect x="8" y="42" width="48" height="10" rx="4" {F}/>',
         f'<path d="M10 42 L10 30 L22 30 L22 42" {F}/>',
         f'<path d="M24 40 L52 16 L60 24 L32 46 Z" {F}/>',
-        f'<path d="M30 36 L36 42 M36 30 L42 36 M42 24 L48 30" {S} stroke-width="2"/>',
+        f'<path d="M30 36 L36 42 M36 30 L42 36 M42 24 L48 30" {S0} stroke-width="2"/>',
         wheel(18, 50, 3.5), wheel(36, 50, 3.5), wheel(50, 50, 3.5),
     ],
     # angular heavy tank with skirts and a stabilised barrel
     "modernarmor": [
         f'<path d="M6 40 L10 32 L54 32 L58 40 L54 50 L10 50 Z" {F}/>',
         f'<path d="M20 32 L24 22 L44 22 L48 32" {F}/>',
-        f'<path d="M44 26 L62 24" {S} stroke-width="5"/>',
+        f'<path d="M44 26 L62 24" {S0} stroke-width="5"/>',
         f'<path d="M12 41 L52 41" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" fill="none"/>',
-        f'<path d="M30 22 L34 16" {S} stroke-width="2"/>',
+        f'<path d="M30 22 L34 16" {S0} stroke-width="2"/>',
     ],
     # delta-wing jet seen from above
     "fighter": [
         f'<path d="M32 6 L38 26 L58 46 L40 44 L36 54 L28 54 L24 44 L6 46 L26 26 Z" {F}/>',
-        f'<path d="M32 12 L32 52" {S} stroke-width="2" stroke-opacity="0.6"/>',
+        f'<path d="M32 12 L32 52" {S0} stroke-width="2" stroke-opacity="0.6"/>',
         f'<path d="M28 54 L26 60 M36 54 L38 60" {S}/>',
         f'<circle cx="32" cy="20" r="3" fill="#ffffff"/>',
     ],

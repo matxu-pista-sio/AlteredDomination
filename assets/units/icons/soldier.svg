@@ -12,7 +12,7 @@
 <g filter="url(#glow)">
   <circle cx="26" cy="17" r="7" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M16 46 Q16 30 26 28 Q36 30 36 46 Z" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M18 40 L52 18" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M46 22 L50 28 M40 26 L43 31" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18 40 L52 18" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M46 22 L50 28 M40 26 L43 31" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
 </g>
 </svg>

@@ -10,10 +10,10 @@
   </filter>
 </defs>
 <g filter="url(#glow)">
-  <circle cx="26" cy="26" r="13" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M26 8 L26 17 M26 35 L26 44 M8 26 L17 26 M35 26 L44 26" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="26" cy="26" r="13" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M26 8 L26 17 M26 35 L26 44 M8 26 L17 26 M35 26 L44 26" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
   <circle cx="26" cy="26" r="2.5" fill="#ffffff"/>
-  <path d="M36 40 L58 58" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
-  <path d="M46 44 L52 44" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36 40 L58 58" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <path d="M46 44 L52 44" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
 </g>
 </svg>

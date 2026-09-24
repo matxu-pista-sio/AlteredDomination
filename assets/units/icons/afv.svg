@@ -12,7 +12,7 @@
 <g filter="url(#glow)">
   <path d="M8 40 L14 28 L50 28 L58 40 Z" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M26 28 L28 20 L40 20 L42 28" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M40 22 L54 18" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M40 22 L54 18" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
   <circle cx="16" cy="44" r="4.5" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/><circle cx="16" cy="44" r="1.5" fill="#ffffff"/>
   <circle cx="32" cy="44" r="4.5" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="44" r="1.5" fill="#ffffff"/>
   <circle cx="48" cy="44" r="4.5" fill="url(#hull)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/><circle cx="48" cy="44" r="1.5" fill="#ffffff"/>
