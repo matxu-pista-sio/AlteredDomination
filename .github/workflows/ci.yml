@@ -133,3 +133,18 @@ jobs:
 
       - name: Test
         run: ctest --preset desktop-debug
+
+      # The client runs headless (Xvfb + Mesa) and screenshots its home
+      # page through the AD_DRIVE stdin driver: proof that the QML loads,
+      # the assets resolve and the bridge answers on a display-less host.
+      - name: Headless screenshot smoke test
+        run: |
+          sudo apt-get install -y xvfb libgl1-mesa-dri libxkbcommon-x11-0 libxcb-cursor0 \
+            libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xkb1 libxcb-render-util0 libxcb-image0
+          python3 scripts/ad.py screenshot home --out shots
+          test -s shots/home.png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: home-screenshot
+          path: shots/home.png
