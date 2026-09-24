@@ -25,6 +25,11 @@ cmake --preset core-debug && cmake --build --preset core-debug && ctest --preset
 ```
 
 Every rule in the design docs has doctest coverage in `core/tests/`. The
+online server has its own doctest suite over real sockets
+(`server/tests/`, built with `desktop-debug`), and `scripts/net_test.py`
+runs two headless clients through a whole online match against a local
+server - run it after touching `LobbyClient`, the server, or the online
+paths of `GameController` / `BattleController`. The
 suite is deterministic and also runs clean under ASan (`core-asan` preset).
 A simulation change must keep `Campaign::stateHash()` / `Battle::stateHash()`
 covering the new state — the replay tests pin determinism. AI budgets are

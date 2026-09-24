@@ -33,7 +33,13 @@ the done-records.
 | 19 | [Client] Desktop polish: shortcuts, tooltips, high-DPI, headless AD_DRIVE hook, skills | | done |
 | 20 | [Owner] Choose a license for the code and the generated data | **yes** | open |
 | 21 | [Owner] Asset provenance: confirm or replace the legacy sounds, fonts and logo | **yes** | open |
-| 22 | [Owner][Epic] Online multiplayer: decide whether to host a matchmaking server | **yes** | open |
+| 22 | [Epic] Online multiplayer: ranked campaigns over a matchmaking + relay server | | done |
+| 23 | [Core] Wire codec: JSON round trips for the campaign and board commands | | done |
+| 24 | [Server] ad-server: accounts, ELO, the ranked queue, the setup negotiation, the lockstep relay | | done |
+| 25 | [Client] The lobby: LobbyClient, the Online page, the shared country picker | | done |
+| 26 | [Client] The lockstep session: GameController and BattleController online modes | | done |
+| 27 | [Client] Watching a battle, reconnecting mid-match, the verdicts | | done |
+| 28 | [Owner] Host ad-server: a machine, TLS, and the client's default address | **yes** | open |
 
 Every done ticket ends with a **Done** section: the commits that closed
 it and the screenshots that prove it (taken headless with

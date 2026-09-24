@@ -315,3 +315,32 @@ never time-limited, for the same reason.
 | `kBattleTurnCap` / `kBattleQuietTurns` | 80 / 30 | §8.5 |
 | `kDominationShare` | 60 % | §9 |
 | difficulty income scale | 0.8 / 1.0 / 1.25 | §6 |
+
+## 12. Online play
+
+Two commanders on two machines play one campaign (docs/PROTOCOL.md): the
+server pairs them from one ranked queue, one of them (at random) sets the
+mode and the AI difficulty, both pick a banner, and the server rolls the
+seed. From then on both clients run the same simulation:
+
+- The two humans are the campaign's humans in seating order (§7): the
+  higher-rated player of the pair is seat 0 and opens every round; the
+  AI powers follow as usual and are computed on **both** machines.
+- Every command a player applies (§5) is sent to the server and relayed
+  to the other client, which applies it to its own copy. Nothing else
+  travels: the state is never transmitted.
+- A defended attack is decided by the attacker for a human's attack and
+  by the defender for an AI attack on a human (the same rule as offline).
+  The engine's auto-resolve is deterministic, so both clients compute it.
+  A board battle is played on the deciding client, the tactical AI's
+  moves included, and its every command is relayed; the other client
+  watches the same board. A battle between the two humans is played by
+  both, each side on its own machine.
+- At every round end each client reports its `stateHash()`; two different
+  hashes void the match (no rating change).
+- Leaving the match, or staying disconnected for 60 s, concedes it; a
+  reconnect inside the window rebuilds the campaign from the seed and the
+  relayed log. Online campaigns are not saved locally.
+- The result is a win, a loss or a draw for each account (ELO, K = 32):
+  a domination win (§9), the elimination of a seat, a resignation or a
+  forfeit.

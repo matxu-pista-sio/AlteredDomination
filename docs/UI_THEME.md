@@ -128,6 +128,18 @@ moves, red for strikes, brass for the selection). A strike fires a
 setting). Right-click a unit for its `UnitCard` (pattern diagram drawn
 from the catalog).
 
+## The lobby
+
+`Lobby.qml` is two columns: on the left the connection (name, server,
+status lamp), the record (ELO, W/L/D, rank) and the queue panel, which
+turns into the setup panel once paired (the opponent, the stage clock,
+the terms for the chooser, the banner for both); on the right the ladder,
+replaced by the `CountryPicker` (the same grid as New game) during the
+banner stage. In a campaign the top bar carries the opponent's flag and
+connection lamp and shows "X is playing…" during their turn; the
+in-game menu offers Resign instead of Save; the end overlay reads the
+server's verdict (ELO delta, or "no verdict" for a void match).
+
 ## Rules of thumb
 
 - **No hex colours in QML.** Every colour is a `Style` property; a new

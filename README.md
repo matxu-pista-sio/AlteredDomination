@@ -84,6 +84,23 @@ Saves live in the platform's application-data folder (`AlteredDomination/saves`)
 effects, the last country played) persist between runs; `AD_THEME=<key>`
 pins a theme for one run.
 
+## Online play
+
+**Online** on the home screen connects to an `ad-server` (docs/PROTOCOL.md,
+server/README.md): a ranked queue pairs you with the nearest rating, one
+of you sets the terms, both pick a banner, and the same campaign runs on
+both machines in lockstep - every command is relayed, every AI round is
+computed on both sides and the server checks that the two worlds agree.
+Leaving concedes; a dropped connection has 60 s to come back. The server
+address is editable in the lobby (`ws://localhost:9977` by default;
+`DEV_SERVER_ADDRESS=host:port` overrides it for a run). To try it on one
+machine, run the server and two clients with separate settings:
+
+```bash
+./build/desktop-debug/server/ad-server --port 9977 &
+python3 scripts/net_test.py        # the whole flow, headless, two clients
+```
+
 ## Developer tooling
 
 The client can be driven headless — no window manager, no GPU:

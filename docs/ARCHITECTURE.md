@@ -8,9 +8,13 @@ AlteredDomination/
 │   └── tests/             doctest unit tests (test_*.cpp, auto-globbed)
 ├── client/        ad: Qt Quick desktop app
 │   ├── src/               main.cpp + C++↔QML bridge (controllers/models)
+│   ├── src/net/           LobbyClient: the WebSocket session to ad-server
 │   ├── qml/               pure QML UI (qt_add_qml_module), styles/, components/
 │   ├── shaders/           GLSL for qt_add_shaders (ocean, paper)
 │   └── fonts/             bundled OFL fonts
+├── server/        ad-server: headless matchmaking + relay (Qt Core/WebSockets/Sql)
+│   ├── src/               Storage (SQLite), Matchmaker, Server, main
+│   └── tests/             doctest over real sockets (test_*.cpp, auto-globbed)
 ├── assets/        generated + curated data (world, units, flags, icons, audio)
 ├── scripts/       data pipeline, icon generator, the `ad` dev CLI
 ├── docs/          design docs (normative)
@@ -25,6 +29,8 @@ AlteredDomination/
   through the byte strings the client hands it — the client owns paths.
 - `client/` depends on `ad::core` + Qt Quick. All UI is **pure QML**; C++ is
   the bridge: models feed data in, controllers accept commands.
+- `server/` depends on `ad::core` (the world, for country keys; the codec
+  kinds) and the non-GUI Qt modules only. It never simulates a campaign.
 - Tests cover `core/` exhaustively (every rule of GAME_DESIGN.md and every
   AI decision of AI_DESIGN.md). Bridge code that is testable without a
   display gets doctest coverage in `client/tests/`.
@@ -53,6 +59,7 @@ AlteredDomination/
 | `ai/strategic.hpp` | `StrategicAi` — one AI player's turn as a list of commands + the resumable `AiRound` |
 | `ai/tactical.hpp` | `TacticalAi` — formation, promotion, `bestAction(battle, budget)` |
 | `save.hpp` | `toJson(Campaign)`, `fromJson(json, World)` |
+| `netcodec.hpp` | the wire form of `Command`, `BattleCommand`, `BattleOutcome` (PROTOCOL.md §5) |
 
 `AiRound` is a **resumable** object: `step()` applies one AI command and
 returns an `AiProgress` event (`TurnStarted`, `Recruited`, `Moved`,
@@ -101,6 +108,23 @@ paths are rebuilt at most once per slice, the ranking once per slice.
   real mice and keyboards use, so popups and flickables see it; see the
   share-screenshot skill and `scripts/ad.py`).
 
+## Online topology (docs/PROTOCOL.md)
+
+Peer lockstep over a relay. Both clients hold a `Campaign` built from the
+same seed and apply the same commands in the same order; the server
+(`server/`) does accounts, ELO, the ranked queue, the setup negotiation
+and a verbatim relay of the command log, and compares the round hashes
+the clients report. In the client, `LobbyClient` owns the socket and the
+session; `GameController` sends every command it applies
+(`sendNet`, `sendBattleCommand`), keeps an **inbox** of relayed frames and
+drains it whenever the campaign is ready for the next one (between turns,
+never over an AI round or a board battle), and rebuilds a campaign from
+the seed and the log on a reattach (`startOnline` with `replay`).
+`BattleController` marks each board side *human* (played here), *remote*
+(fed by the relay) or *AI* (played here and relayed out), so one code path
+serves the deciding client, the watching client and a human-vs-human
+board.
+
 ## Threading
 
 Only the tactical AI leaves the main thread: `bestAction()` and the
@@ -116,7 +140,9 @@ deltas between slices. No second thread ever touches the campaign.
 ## Build
 
 CMake ≥ 3.27, Ninja, C++23 (GCC 13+, Clang 17+, MSVC 19.38+). Presets:
-`core-debug`, `core-asan`, `desktop-debug`, `desktop-release`. Dependencies
-(nlohmann_json, doctest) are fetched by CPM into `~/.cache/cpm`; Qt 6.8+
-(Quick, QuickControls2, Shapes, Effects, VectorImage, Svg, Multimedia,
-ShaderTools) is found via `CMAKE_PREFIX_PATH`.
+`core-debug`, `core-release`, `core-asan`, `desktop-debug`,
+`desktop-release`, `server-release` (core + server, no client).
+Dependencies (nlohmann_json, doctest) are fetched by CPM into
+`~/.cache/cpm`; Qt 6.8+ (Quick, QuickControls2, Shapes, Effects,
+VectorImage, Svg, Multimedia, ShaderTools, WebSockets, Sql) is found via
+`CMAKE_PREFIX_PATH`. `AD_BUILD_SERVER=OFF` leaves the server out.
