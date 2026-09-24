@@ -93,10 +93,11 @@ jobs:
           python3 scripts/gen_unit_svgs.py
           git diff --exit-code -- assets/world assets/units
 
-  # Compile check of the Qt client (and the tests once more from the
-  # desktop-debug tree), plus qmllint over every QML module.
+  # Compile check of the Qt client and the online server (and the tests
+  # once more from the desktop-debug tree, the server's suite included),
+  # plus qmllint over every QML module.
   qt-build:
-    name: qt client (Qt 6.8)
+    name: qt client + server (Qt 6.8)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,8 +112,9 @@ jobs:
         with:
           version: "6.8.*"
           # qtshadertools: the client compiles its surface shaders (qsb);
-          # qtmultimedia: sound effects and music.
-          modules: "qtshadertools qtmultimedia"
+          # qtmultimedia: sound effects and music; qtwebsockets: the online
+          # server and the lobby client (Sql ships with qtbase).
+          modules: "qtshadertools qtmultimedia qtwebsockets"
           cache: true
 
       - name: Cache CPM packages
@@ -125,7 +127,7 @@ jobs:
       - name: Configure (desktop-debug, Qt required)
         run: cmake --preset desktop-debug -DAD_REQUIRE_QT=ON -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
 
-      - name: Build client + tests
+      - name: Build client + server + tests
         run: cmake --build --preset desktop-debug --parallel
 
       - name: qmllint
