@@ -1,56 +1,38 @@
-# C++ objects and libs
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.so.*
-*.dll
-*.dylib
+# Build directories
+build/
+build-*/
+out/
+cmake-build-*/
 
-# Qt-es
-object_script.*.Release
-object_script.*.Debug
-*_plugin_import.cpp
-/.qmake.cache
-/.qmake.stash
-*.pro.user
-*.pro.user.*
-*.qbs.user
-*.qbs.user.*
-*.moc
-moc_*.cpp
-moc_*.h
-qrc_*.cpp
-ui_*.h
-*.qmlc
-*.jsc
-Makefile*
-*build-*
-*.qm
-*.prl
+# CPM / FetchContent caches
+.cpm-cache/
+_deps/
 
-# Qt unit tests
-target_wrapper.*
-
-# QtCreator
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+compile_commands.json
+.cache/
+CMakeLists.txt.user*
+*.pro.user*
 *.autosave
 
-# QtCreator Qml
-*.qmlproject.user
-*.qmlproject.user.*
+# Qt
+*.qmlc
+*.jsc
+.qmlls.ini
+.qtc_clangd/
 
-# QtCreator CMake
-CMakeLists.txt.user*
+# Python
+__pycache__/
+*.pyc
+.venv/
 
-# QtCreator 4.8< compilation database 
-compile_commands.json
+# Local environment (kit paths) - see .env.example
+.env
 
-# QtCreator local machine specific files for imported projects
-*creator.user*
-
-# custom
-data/icons/AD board - Agile Board - AFKAAR_files/
-
+# Screenshots and scratch renders never belong in the tree
+*.png.tmp

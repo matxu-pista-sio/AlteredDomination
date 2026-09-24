@@ -1,0 +1,24 @@
+# Google-derived, 80 columns, 2-space indent - the same shape as TopGen's
+# sources so both games read alike.
+BasedOnStyle: Google
+IndentWidth: 2
+ColumnLimit: 80
+DerivePointerAlignment: false
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<doctest/'
+    Priority: 1
+  - Regex: '^<Q'
+    Priority: 2
+  - Regex: '^<[a-z_]+>$'
+    Priority: 3
+  - Regex: '^<nlohmann/'
+    Priority: 4
+  - Regex: '^"ad/'
+    Priority: 5
+  - Regex: '.*'
+    Priority: 6
