@@ -47,6 +47,8 @@ public:
   void refreshCity(int id);
   void refreshAll();
   void setActive(int selected, const std::vector<int>& targets);
+  /// Rebuild the path strings if any hostility changed since the last flush.
+  void flushPaths();
 
   [[nodiscard]] QString landPath() const { return landPath_; }
   [[nodiscard]] QString seaPath() const { return seaPath_; }
@@ -80,6 +82,7 @@ private:
   std::vector<std::vector<int>> byCity_;  // row indices touching a city
   std::vector<int> activeRows_;
   QString landPath_, seaPath_, hostilePath_, activePath_;
+  bool pathsDirty_{false};
 };
 
 } // namespace ad::client

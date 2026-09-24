@@ -21,7 +21,7 @@ using namespace ad::core;
 
 namespace {
 
-constexpr int kAiSliceMs = 24;  // stepping per event-loop tick; the UI still repaints between slices
+constexpr int kAiSliceMs = 40;  // stepping per event-loop tick; the UI still repaints between slices
 
 QString sv(std::string_view s) { return QString::fromUtf8(s.data(), static_cast<int>(s.size())); }
 
@@ -311,6 +311,9 @@ void GameController::installCampaign(std::unique_ptr<Campaign> c, const QString&
   trackHuman();
   ownerCache_.clear();
   for (const City& city : world_->cities()) ownerCache_.push_back(campaign_->owner(city.id));
+  dirtyCities_.clear();
+  dirtyFlags_.assign(world_->cities().size(), false);
+  rankingDirty_ = false;
   aiCount_ = 0;
   for (const PlayerState& p : campaign_->players())
     if (p.kind == PlayerKind::Ai) ++aiCount_;
@@ -372,6 +375,28 @@ void GameController::refreshCities(std::initializer_list<int> ids) {
   for (const int id : ids) {
     cities_->refreshCity(id);
     links_->refreshCity(id);
+  }
+  links_->flushPaths();
+}
+
+void GameController::markDirty(int city) {
+  if (city < 0 || city >= static_cast<int>(dirtyFlags_.size()) || dirtyFlags_[static_cast<std::size_t>(city)]) return;
+  dirtyFlags_[static_cast<std::size_t>(city)] = true;
+  dirtyCities_.push_back(city);
+}
+
+void GameController::flushDirty() {
+  for (const int id : dirtyCities_) {
+    dirtyFlags_[static_cast<std::size_t>(id)] = false;
+    cities_->refreshCity(id);
+    links_->refreshCity(id);
+    if (id == selected_) cityUnits_->refresh();
+  }
+  dirtyCities_.clear();
+  links_->flushPaths();
+  if (rankingDirty_) {
+    rankingDirty_ = false;
+    countries_->refresh();
   }
 }
 
@@ -713,31 +738,35 @@ void GameController::stepAiRound() {
         aiStatus_ = QStringLiteral("%1 is moving…").arg(nameOf(ev.player));
         emit aiStatusChanged();
         break;
-      case AiProgress::Kind::Recruited: refreshCities({ev.to}); break;
+      case AiProgress::Kind::Recruited: markDirty(ev.to); break;
       case AiProgress::Kind::Moved:
-        if (ev.count > 0) refreshCities({ev.from, ev.to});
+        if (ev.count > 0) {
+          markDirty(ev.from);
+          markDirty(ev.to);
+        }
         break;
       case AiProgress::Kind::Captured:
-        refreshCities({ev.from, ev.to});
+        markDirty(ev.from);
         handleCapture(ev.to, ev.player, ownerCache_[static_cast<std::size_t>(ev.to)]);
         break;
       case AiProgress::Kind::BattleResolved:
-        refreshCities({ev.from, ev.to});
+        markDirty(ev.from);
+        markDirty(ev.to);
         if (campaign_->owner(ev.to) != ownerCache_[static_cast<std::size_t>(ev.to)])
           handleCapture(ev.to, ev.player, ownerCache_[static_cast<std::size_t>(ev.to)]);
         else if (campaign_->owner(ev.to) == me())
           emit notice(QStringLiteral("%1 held against %2").arg(QString::fromStdString(world_->city(ev.to).name), nameOf(ev.player)),
                       QStringLiteral("good"));
-        if (ev.to == selected_) cityUnits_->refresh();
         break;
       case AiProgress::Kind::BattleNeedsHuman:
         aiTimer_.stop();
+        flushDirty();
         offer_ = *round_->humanBattle();
         offerIsAttack_ = false;
         emit battleOfferedChanged();
         emit stateChanged();
         return;
-      case AiProgress::Kind::TurnEnded: countries_->refresh(); break;
+      case AiProgress::Kind::TurnEnded: rankingDirty_ = true; break;
       case AiProgress::Kind::RoundFinished: finishAiRound(); return;
     }
     if (round_->finished()) {
@@ -745,10 +774,12 @@ void GameController::stepAiRound() {
       return;
     }
   }
+  flushDirty();
 }
 
 void GameController::finishAiRound() {
   aiTimer_.stop();
+  flushDirty();
   round_.reset();
   trackHuman();
   refreshAll();
@@ -764,8 +795,9 @@ void GameController::finishAiRound() {
 
 void GameController::handleCapture(int city, PlayerId by, PlayerId from) {
   ownerCache_[static_cast<std::size_t>(city)] = by;
-  refreshCities({city});
-  countries_->refresh();
+  markDirty(city);
+  rankingDirty_ = true;
+  if (!round_) flushDirty();  // the human's own capture shows at once
   const QString cityName = QString::fromStdString(world_->city(city).name);
   emit cityCaptured(city, QString::fromStdString(world_->country(by).key));
   if (by == me())

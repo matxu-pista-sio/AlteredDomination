@@ -203,6 +203,10 @@ private:
   void installCampaign(std::unique_ptr<ad::core::Campaign> c, const QString& slot);
   void refreshAll();
   void refreshCities(std::initializer_list<int> cities);
+  /// Refreshes during the AI round are batched: cities marked here are
+  /// refreshed once per time slice by flushDirty().
+  void markDirty(int city);
+  void flushDirty();
   void refreshHighlights();
   void trackHuman();
   void startAiRound();
@@ -236,6 +240,9 @@ private:
   qint64 playSeconds_{0};
   int aiCount_{0};
   std::vector<ad::core::PlayerId> ownerCache_;  // owner per city as the models last saw it
+  std::vector<int> dirtyCities_;
+  std::vector<bool> dirtyFlags_;
+  bool rankingDirty_{false};
   std::vector<int> baseIncome_;                 // GDP-mode starting income per country
 
   WorldModel* cities_{nullptr};

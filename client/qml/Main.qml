@@ -74,6 +74,7 @@ ApplicationWindow {
             if (!GameController.active) GameController.newGame("fr", "gdp", "normal", "7", [])
             startCampaign()
             const from = GameController.capitalOf("fr")
+            GameController.recruit(from, "fighter", 2)
             const targets = GameController.attackTargets(from)
             let target = null
             for (const t of targets) if (!t.undefended) { target = t; break }

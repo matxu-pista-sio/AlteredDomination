@@ -70,6 +70,7 @@ void LinkModel::rebuildPaths() {
   landPath_ = land;
   seaPath_ = sea;
   hostilePath_ = hostile;
+  pathsDirty_ = false;
   emit pathsChanged();
 }
 
@@ -104,7 +105,13 @@ void LinkModel::refreshCity(int id) {
     changed = true;
     emit dataChanged(index(row), index(row), {HostileRole});
   }
-  if (changed) rebuildPaths();
+  if (changed) pathsDirty_ = true;
+}
+
+void LinkModel::flushPaths() {
+  if (!pathsDirty_) return;
+  pathsDirty_ = false;
+  rebuildPaths();
 }
 
 void LinkModel::refreshAll() {

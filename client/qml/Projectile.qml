@@ -42,11 +42,6 @@ Item {
     }
 
     ParticleSystem { id: sparks }
-    ImageParticle {
-        system: sparks
-        source: "qrc:/assets/units/icons/soldier.svg"
-        visible: false
-    }
     ItemParticle {
         system: sparks
         delegate: Rectangle {
