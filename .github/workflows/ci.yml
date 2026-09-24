@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+# CPM sources land in ~/.cache/cpm (the default set by cmake/get_cpm.cmake),
+# which each job caches keyed on cmake/Dependencies.cmake.
+jobs:
+  # Deterministic core + full doctest suite - no Qt involved.
+  core-tests:
+    name: core tests (gcc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Cache CPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cpm
+          key: cpm-${{ runner.os }}-${{ hashFiles('cmake/Dependencies.cmake') }}
+          restore-keys: cpm-${{ runner.os }}-
+
+      - name: Configure
+        run: cmake --preset core-debug
+        env:
+          CC: gcc
+          CXX: g++
+
+      - name: Build
+        run: cmake --build --preset core-debug --parallel
+
+      - name: Test
+        run: ctest --preset core-debug
+
+  # Same suite under AddressSanitizer + UBSan.
+  core-asan:
+    name: core tests (ASan/UBSan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Cache CPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cpm
+          key: cpm-${{ runner.os }}-${{ hashFiles('cmake/Dependencies.cmake') }}
+          restore-keys: cpm-${{ runner.os }}-
+
+      - name: Configure
+        run: cmake --preset core-asan
+        env:
+          CC: gcc
+          CXX: g++
+
+      - name: Build
+        run: cmake --build --preset core-asan --parallel
+
+      - name: Test
+        run: ctest --preset core-asan
+        env:
+          ASAN_OPTIONS: strict_string_checks=1:detect_stack_use_after_return=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+
+  # The generated data must be reproducible and self-consistent.
+  data-checks:
+    name: data checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate the committed data
+        run: |
+          if [ -f scripts/check_world.py ]; then python3 scripts/check_world.py; fi
+          if [ -f scripts/check_units.py ]; then python3 scripts/check_units.py; fi
+
+  # Compile check of the Qt client (and the tests once more from the
+  # desktop-debug tree), plus qmllint over every QML module.
+  qt-build:
+    name: qt client (Qt 6.8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja + GL dev packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgl-dev libegl-dev libxkbcommon-dev
+
+      - name: Install Qt 6.8
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.*"
+          # qtshadertools: the client compiles its surface shaders (qsb);
+          # qtmultimedia: sound effects and music.
+          modules: "qtshadertools qtmultimedia"
+          cache: true
+
+      - name: Cache CPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cpm
+          key: cpm-${{ runner.os }}-${{ hashFiles('cmake/Dependencies.cmake') }}
+          restore-keys: cpm-${{ runner.os }}-
+
+      - name: Configure (desktop-debug, Qt required)
+        run: cmake --preset desktop-debug -DAD_REQUIRE_QT=ON -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
+
+      - name: Build client + tests
+        run: cmake --build --preset desktop-debug --parallel
+
+      - name: qmllint
+        run: cmake --build --preset desktop-debug --target all_qmllint
+
+      - name: Test
+        run: ctest --preset desktop-debug
