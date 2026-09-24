@@ -51,18 +51,21 @@ the world data (DATA_PIPELINE.md §6) and are tinted onto the land.
 `ADDesktop` (`client/qml/styles/desktop/`) is written from scratch over
 `QtQuick.Templates` — no stock Qt style underneath (Basic only as the
 fallback for controls the game never instantiates): `Button`, `ComboBox`,
-`Slider`, `SpinBox`, `TextField`, `CheckBox`, `ScrollBar`, `ToolTip`,
-`Label`, `ItemDelegate`, `Popup`, `TabButton`. Control height 30 px,
-hover feedback, 1 px borders. `highlighted`/`checked` fills brass with ink
-text — the LIT state the HUD toggles rely on.
+`Slider`, `SpinBox`, `TextField`, `CheckBox`, `Switch`, `ScrollBar`,
+`ToolTip`, `Label`, `ItemDelegate`, `Popup`, `TabButton`. Control height
+30 px, hover feedback, 1 px borders. `highlighted`/`checked` fills brass
+with ink text — the LIT state the HUD toggles rely on; the style's own
+`primary` fills with the lamp (the one action a page wants) and `danger`
+with the lamp turned red. Pages that use those two import `ADDesktop`
+directly, so qmllint sees them.
 
 ## Typography
 
 Titles are set in **Rajdhani** (OFL, bundled) — a squared, technical
 display face that reads as stencilled metal at 28 px; body copy in
 **Source Sans 3** (OFL, bundled). Sizes come from `Style.fontSmall/fontBody/
-fontTitle/fontDisplay`; the numbers on the HUD (funds, income, round) use
-`Style.monoFamily` tabular figures so they do not jitter.
+fontTitle/fontDisplay`; the numbers on the HUD (funds, income, round) ask for
+tabular figures (`font.features: { "tnum": 1 }`) so they do not jitter.
 
 ## The map stack (WorldMap.qml)
 

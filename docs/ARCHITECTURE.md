@@ -54,13 +54,13 @@ AlteredDomination/
 | `ai/tactical.hpp` | `TacticalAi` — formation, promotion, `bestAction(battle, budget)` |
 | `save.hpp` | `toJson(Campaign)`, `fromJson(json, World)` |
 
-`AiRound` is a **resumable** object: `step()` advances the AI turns and
-returns `Progress` events (`AiTurnStarted`, `Recruited`, `Moved`,
-`CaptureUndefended`, `BattleAiVsAi{result}`, `BattleNeedsHuman{attacker,
-defender, unitIds}`, `RoundFinished`). When it needs a human battle it stops
-until `resumeWithBattleResult(result)` is called. The client runs `step()`
-on a worker thread and plays the human's battles on the main thread; the
-tests run it to completion with the tactical AI on both sides.
+`AiRound` is a **resumable** object: `step()` applies one AI command and
+returns an `AiProgress` event (`TurnStarted`, `Recruited`, `Moved`,
+`Captured`, `BattleResolved`, `BattleNeedsHuman`, `TurnEnded`,
+`RoundFinished`). When it needs a human battle it stops until
+`resumeWithBattleResult(result)` is called. The client steps it in time
+slices from the main thread's event loop and plays the human's battles in
+between; the tests run it to completion with the tactical AI on both sides.
 
 ## C++ ↔ QML bridge (client)
 
@@ -68,9 +68,11 @@ Performance rule: models are updated by **deltas** from core events, never
 rebuilt per action.
 
 - `GameController` (QML singleton): owns the `Campaign`, starts/loads/saves
-  games, exposes `Q_INVOKABLE recruit/move/attack/endTurn/selectCity`, runs
-  the AI round on a `QThread` worker and surfaces `battleRequested`,
-  `aiProgress`, `roundEnded`, `gameOver`.
+  games, exposes `Q_INVOKABLE recruit/moveUnits/attack/endTurn` and the
+  `selectedCity`/`interaction` properties, steps the AI round from a
+  zero-interval `QTimer` (at most ~8 ms per tick, so the UI keeps
+  animating) and surfaces `battleRequested`, `aiStatus`/`aiProgress`,
+  `notice`, `cityCaptured`, `roundEnded`, `gameEnded`.
 - `WorldModel` (`QAbstractListModel`, one row per city): id, key, name,
   x, y, tier, isCapital, ownerKey, ownerColor, originalKey, unitCount,
   power, territoryPath (SVG path string), selected/highlight flags,
@@ -81,11 +83,12 @@ rebuilt per action.
 - `CityUnitsModel`: the selected city's units grouped by type.
 - `CatalogModel`: the unit types (cost, classes, icon, patterns for the
   codex diagram).
-- `BattleController` (QML singleton): owns the current `Battle`, exposes
-  `BoardModel` (cells with unit, general, highlight roles), phase, side to
-  act, actions left, `Q_INVOKABLE` commands, and runs the tactical AI on a
-  worker (`QtConcurrent::run`) — the UI never blocks, and every AI action
-  is animated before the next is asked for.
+- `BattleController` (`GameController.battle`): owns the current `Battle`,
+  exposes `BoardModel` (one row per unit: cell, side, general, acted,
+  alive), phase, side to act, actions left, the selection's legal targets,
+  `Q_INVOKABLE` commands, and runs the tactical AI on a worker
+  (`QtConcurrent::run` over a private copy of the battle) — the UI never
+  blocks, and every AI action is animated before the next is asked for.
 - `SaveStore`: slots + metadata list model in `AppDataLocation`.
 - `Style` (singleton, UI_THEME.md), `Audio` (singleton: `SoundEffect` pool +
   `MediaPlayer` music), `DevDrive` (headless screenshot/driver, see the
@@ -93,11 +96,15 @@ rebuilt per action.
 
 ## Threading
 
-Only two places leave the main thread: `AiRound::step()` and the tactical
-AI's `bestAction()`. Both operate on state the UI does not touch while they
-run (the campaign during the AI round is read-only for the models until
-`roundEnded`; the battle board is locked while the AI thinks). Results come
-back as queued signals.
+Only the tactical AI leaves the main thread: `bestAction()` and the
+auto-resolve `playOut()` run through `QtConcurrent` on a **copy** of the
+battle, and the result is applied on the main thread when the
+`QFutureWatcher` finishes (a generation counter drops results of a battle
+that was quit meanwhile). The strategic AI round never leaves the main
+thread: `AiRound::step()` is cheap (a whole 206-player round is a few
+hundred milliseconds in a release build), so the controller steps it in
+~8 ms slices from a zero-interval `QTimer` and the models are updated by
+deltas between slices. No second thread ever touches the campaign.
 
 ## Build
 
