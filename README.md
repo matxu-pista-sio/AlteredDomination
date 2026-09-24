@@ -61,7 +61,7 @@ The full rules are in [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md); the in-game
 Codex repeats them with the unit patterns.
 
 ![The chart](docs/screenshots/campaign-capital.png)
-![The board](docs/screenshots/battle-strike.png)
+![The board — you always hold the bottom edge](docs/screenshots/battle-strike.png)
 
 More in [docs/screenshots/](docs/screenshots/): the home chart, the
 country picker, the codex, the control gallery, the three themes, the

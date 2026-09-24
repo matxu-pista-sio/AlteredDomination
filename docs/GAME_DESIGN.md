@@ -186,6 +186,9 @@ its result.
   (`x ∈ [0, 2]`) and the defender's three right columns (`x ∈ [11, 13]`).
   `3 · w ≥ n` always holds for both sides, so every unit fits.
 - Cells are addressed `(x, y)`, `0 ≤ x < 14`, `0 ≤ y < w`.
+- "Left" and "right" are the core's frame only. The client draws the board
+  upright with the viewing player's edge at the bottom (the defender sees
+  it turned around), see docs/UI_THEME.md "The battle screen".
 
 ### 8.2 Phases
 

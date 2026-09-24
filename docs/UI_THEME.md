@@ -100,6 +100,24 @@ Ocean (ShaderEffect, fills the viewport)
 
 ## The battle screen
 
+The board stands upright: its long axis runs top to bottom, **the viewing
+player always holds the bottom edge** and the enemy the top, whichever
+side of the core's `x` axis they are on. `Battle.qml` maps core cells to
+screen cells through four functions (`screenRow/screenCol` and
+`boardX/boardY`); for the defender the board is turned around
+(`mirrored`), so every path, highlight, cursor and projectile is drawn in
+screen space from the same mapping. The edge labels name the two
+countries above and below the grid.
+
+The screen is three columns: the situation panel on the left (phase title,
+the thinking spinner and status line, the city, the enemy's party block
+under "▲ the enemy holds the top", the hint text, then "▼ you hold the
+bottom" and the player's party block), the board centred in the middle
+(cells sized to fit the height, at least 24 px), and the **Orders** panel
+on the right (action pips, Ready / End turn, Offer draw, Surrender,
+Auto-resolve, Quit, key hints). Arrow keys move a cursor over screen
+cells and Space acts on the cell under it.
+
 The board is a `Repeater` of cells over a slate grid, the units are
 `UnitChip`s (VectorImage icon on a banner-coloured disc, general crown,
 "acted" dimming) that animate between cells (`Behavior on x/y`, 220 ms).
@@ -107,9 +125,8 @@ Legal targets of the selected unit come from `BoardModel` (green for
 moves, red for strikes, brass for the selection). A strike fires a
 `Projectile` (a `Shape` dot along a `PathAnimation`) and an explosion
 `ParticleSystem`; a general's fall shakes the board (`combatShake`
-setting). The phase, the side to act and the actions left sit in the top
-bar; Ready / Draw / Surrender / Quit in the action bar; right-click a unit
-for its `UnitCard` (pattern diagram drawn from the catalog).
+setting). Right-click a unit for its `UnitCard` (pattern diagram drawn
+from the catalog).
 
 ## Rules of thumb
 
