@@ -13,10 +13,27 @@ Rectangle {
 
     signal menu()
 
-    readonly property bool victory: GameController.victory
+    readonly property bool online: GameController.online && GameController.onlineOver
+    readonly property var verdict: GameController.onlineOutcome
+    readonly property bool victory: online ? verdict.won === true : GameController.victory
+    readonly property bool draw: online && verdict.draw === true
+
+    function reasonText() {
+        switch (verdict.reason) {
+        case "domination": return victory ? "You rule the world's economy" : (verdict.opponent || "The opponent") + " rules the world's economy"
+        case "elimination": return victory ? (verdict.opponent || "The opponent") + " has no city left" : "Your last city has fallen"
+        case "resign": return victory ? (verdict.opponent || "The opponent") + " resigned" : "You resigned"
+        case "forfeit": return victory ? (verdict.opponent || "The opponent") + " never came back" : "You left the match"
+        case "desync": return "The two campaigns diverged - the match is void"
+        case "disputed": return "The two reports disagreed - the match is void"
+        case "server_restart": return "The server restarted and lost the match"
+        case "peer_disconnected": return "The opponent left before the campaign began"
+        default: return verdict.reason || ""
+        }
+    }
 
     color: Qt.alpha(Style.ink, 0.72)
-    visible: GameController.gameOver
+    visible: GameController.gameOver || online
     opacity: visible ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 500 } }
 
@@ -33,16 +50,19 @@ Rectangle {
             spacing: 12
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: overlay.victory ? "VICTORY" : "DEFEAT"
+                text: overlay.draw ? "NO VERDICT" : overlay.victory ? "VICTORY" : "DEFEAT"
                 font.family: Style.displayFamily
                 font.pixelSize: 54
                 font.bold: true
                 font.letterSpacing: 8
-                color: overlay.victory ? Style.lamp : Style.danger
+                color: overlay.draw ? Style.brass : overlay.victory ? Style.lamp : Style.danger
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: overlay.victory
+                text: overlay.online
+                      ? overlay.reasonText() + (overlay.verdict.disputed ? "  ·  no rating change"
+                         : overlay.verdict.eloDelta !== undefined ? "  ·  " + (overlay.verdict.eloDelta >= 0 ? "+" : "") + overlay.verdict.eloDelta + " ELO" : "")
+                      : overlay.victory
                       ? GameController.humanName + " rules " + GameController.sharePercent.toFixed(0) + " % of the world's income after " + GameController.round + " rounds"
                       : GameController.winnerName !== "" ? GameController.winnerName + " rules the world"
                                                          : GameController.humanName + " has fallen in round " + GameController.round

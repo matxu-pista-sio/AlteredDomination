@@ -77,9 +77,28 @@ public:
   /// Set up the battle the campaign asked for and start the AI sides.
   void begin(const ad::core::Campaign& campaign, const ad::core::PendingBattle& pb, bool attackerHuman,
              bool defenderHuman, ad::core::SearchBudget aiBudget);
+  /// The online form (docs/PROTOCOL.md §5): `human[s]` is played here,
+  /// `remote[s]` is driven by relayed commands, the rest by the local AI
+  /// (whose commands are then relayed out). `viewSide` forces the screen's
+  /// side (-1: as usual).
+  void begin(const ad::core::Campaign& campaign, const ad::core::PendingBattle& pb, const bool human[2],
+             const bool remote[2], int viewSide, ad::core::SearchBudget aiBudget);
   /// Drop the battle (after finished()).
   void end();
   [[nodiscard]] std::optional<ad::core::BattleOutcome> outcome() const;
+
+  // -- the relay (GameController) --------------------------------------------
+  /// Apply one command that arrived from the other client; animated like
+  /// a local one, never re-emitted through commandApplied().
+  void applyRemote(const ad::core::BattleCommand& cmd);
+  /// The other client quit before Play: `side` concedes, everyone survives.
+  void remoteRetreat(int side);
+  /// While a log is replayed no AI runs and nothing animates; turning it
+  /// off kicks the AI for whatever side is due.
+  void setReplaying(bool on);
+  [[nodiscard]] bool isRemote(int side) const { return side >= 0 && side < 2 && remote_[side]; }
+  /// quit() before Play: which side withdrew (-1 when the battle was played out).
+  [[nodiscard]] int retreatedSide() const { return retreated_ ? static_cast<int>(retreatSide_) : -1; }
 
   [[nodiscard]] bool active() const { return battle_.has_value(); }
   [[nodiscard]] BoardModel* units() const { return units_; }
@@ -154,12 +173,20 @@ signals:
   void notice(const QString& text);
   /// The battle is over and the player left the page: outcome() is set.
   void finished();
+  /// Every command applied on this client - the human's and the local
+  /// AI's, never a relayed one - for the online relay.
+  void commandApplied(const ad::core::BattleCommand& cmd);
 
 private:
   [[nodiscard]] ad::core::Side sideOf(int s) const { return s == 0 ? ad::core::Side::Attacker : ad::core::Side::Defender; }
   [[nodiscard]] bool humanSide(ad::core::Side s) const { return human_[static_cast<int>(s)]; }
+  [[nodiscard]] bool aiSide(ad::core::Side s) const { return !human_[static_cast<int>(s)] && !remote_[static_cast<int>(s)]; }
   [[nodiscard]] ad::core::Side humanFor(ad::core::Cell c) const;
+  /// The one door into Battle::apply: a success is announced through
+  /// commandApplied() unless it came from the relay.
+  bool applyCmd(const ad::core::BattleCommand& cmd, bool fromRemote = false);
   void applyHuman(const ad::core::BattleCommand& cmd, const QVariantMap& action = {});
+  void retreat(ad::core::Side side);
   void afterChange();
   void updateHighlights();
   void kickAi();
@@ -171,6 +198,11 @@ private:
   std::optional<ad::core::Battle> battle_;
   BoardModel* units_{nullptr};
   bool human_[2]{false, false};
+  bool remote_[2]{false, false};
+  int viewSide_{-1};
+  bool replaying_{false};
+  bool retreated_{false};
+  ad::core::Side retreatSide_{ad::core::Side::Attacker};
   QVariantMap parties_[2];
   QString cityName_;
   ad::core::SearchBudget budget_{ad::core::SearchBudget::Normal};

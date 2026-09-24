@@ -24,6 +24,7 @@ Popup {
     property bool saving: false
 
     function quickSave() {
+        if (GameController.online) return
         const slot = GameController.currentSlot !== "" && GameController.currentSlot !== "autosave"
                      ? GameController.currentSlot : GameController.saves.newSlotName()
         if (GameController.saveGame(slot)) menu.saved(slot)
@@ -42,7 +43,8 @@ Popup {
         }
         Text {
             width: parent.width
-            text: GameController.humanName + "  ·  round " + GameController.round + "  ·  " + GameController.modeKey
+            text: GameController.humanName + (GameController.online ? "  vs  " + GameController.opponentName : "")
+                  + "  ·  round " + GameController.round + "  ·  " + GameController.modeKey
                   + " / " + GameController.difficultyKey + "  ·  seed " + GameController.seedText
             font.pixelSize: Style.fontSmall
             color: Style.inkFaint
@@ -58,12 +60,20 @@ Popup {
             onClicked: menu.close()
         }
         Button {
+            visible: !GameController.online
             width: parent.width
             text: menu.saving ? "Save to…" : "Save"
             checkable: true
             checked: menu.saving
             enabled: GameController.humanTurn
             onClicked: menu.saving = !menu.saving
+        }
+        Button {
+            visible: GameController.online && !GameController.onlineOver
+            width: parent.width
+            text: "Resign the match"
+            danger: true
+            onClicked: confirmResign.open()
         }
         Column {
             visible: menu.saving
@@ -102,16 +112,25 @@ Popup {
             width: parent.width
             text: "Quit to the menu"
             danger: true
-            onClicked: confirmQuit.open()
+            onClicked: GameController.online && !GameController.onlineOver ? confirmResign.open() : confirmQuit.open()
         }
         Text {
             width: parent.width
-            text: "Ctrl+S saves to the current slot at any time."
+            text: GameController.online ? "An online match is kept on the server; leaving it concedes."
+                                        : "Ctrl+S saves to the current slot at any time."
             font.pixelSize: Style.fontSmall
             color: Style.inkFaint
         }
     }
 
+    ConfirmDialog {
+        id: confirmResign
+        title: "Resign the match?"
+        text: "The server records a loss for you and a win for " + GameController.opponentName + "."
+        confirmText: "Resign"
+        destructive: true
+        onAccepted: { menu.close(); GameController.resign() }
+    }
     ConfirmDialog {
         id: confirmQuit
         title: "Quit to the menu?"

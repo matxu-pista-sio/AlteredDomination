@@ -117,9 +117,9 @@ something to repair.
 | `attack` | `from`, `to`, `units` | §5.3 — may open a battle |
 | `end_turn` | | §4 |
 | `battle_choice` | `auto`: true/false | the answer to a battle prompt (below) |
-| `bcmd` | one board command: `{"kind":"rearrange"|"ready"|"promote"|"demote"|"move"|"strike"|"end"|"offer_draw"|"surrender", "side":0/1, "from":{"x","y"}, "to":{"x","y"}, "cell":{"x","y"}, "target":{"x","y"}}` | §8, one applied command, the AI's included |
-| `battle_quit` | | the deciding human quit before Play: the attackers withdraw |
-| `resign` | | the sender concedes the match |
+| `bcmd` | `cmd`: one board command `{"kind":"rearrange"|"ready"|"promote"|"demote"|"move"|"strike"|"end"|"offer_draw"|"surrender", "side":0/1, "from":{"x","y"}, "to":{"x","y"}, "cell":{"x","y"}, "target":{"x","y"}}` | §8, one applied command, the AI's included |
+| `battle_quit` | `side` (board side 0/1) | a side played on that client left the board before Play: it loses the battle as it stands, every unit survives |
+| `resign` | | the sender concedes the match; the server rules it at once (§6) |
 
 Player ids never travel: the receiver maps the frame's `side` to its
 campaign's human of that seat. The core's wire codec is
@@ -152,13 +152,16 @@ The clients report and the server records — with two independent cores
 replaying one log, a claim is checked by the other side's report:
 
 - Client → server: `{"t":"result","match_id":"m-...","winner_side":0|1|-1,"reason":"domination"|"elimination"|"resign"}`
-  from BOTH clients when the campaign ends (GAME_DESIGN.md §9), or right
-  after a `resign` command.
+  from BOTH clients when the campaign ends (GAME_DESIGN.md §9: a
+  domination win, or the elimination of one of the two seats).
 - Server → both: `{"t":"match_end","match_id":"m-...","winner_side":1,"reason":"...","elo_delta":-12,"disputed":false}`.
 
 Two matching reports finalize; conflicting reports finalize `disputed`
-with no rating change. A forfeit (§7) needs no report: the server rules it.
-ELO: K = 32, standard expected-score formula, applied once per match.
+with no rating change, and so does a lone report the other side never
+matches within 30 s while it stays connected. A forfeit (§7) and a
+`resign` command need no report: the server rules them the moment they
+happen. ELO: K = 32, standard expected-score formula, applied once per
+match.
 
 ## 7. Timeouts & disconnects
 

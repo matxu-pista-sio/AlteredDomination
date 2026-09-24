@@ -8,9 +8,12 @@
 #include <QVariantMap>
 #include <QtQml/qqmlregistration.h>
 
+#include <deque>
 #include <memory>
 #include <optional>
 #include <vector>
+
+#include <QJsonObject>
 
 #include <QColor>
 #include <QElapsedTimer>
@@ -29,6 +32,8 @@
 #include "worldmodel.h"
 
 namespace ad::client {
+
+class LobbyClient;
 
 /// QML singleton that owns the campaign (docs/ARCHITECTURE.md). Every
 /// action QML can take goes through an invokable here and into
@@ -87,6 +92,21 @@ class GameController : public QObject {
   Q_PROPERTY(QString worldHash READ worldHash CONSTANT)
   Q_PROPERTY(bool battleOffered READ battleOffered NOTIFY battleOfferedChanged)
   Q_PROPERTY(QVariantMap battleOffer READ battleOffer NOTIFY battleOfferedChanged)
+  /// The battle prompt is this client's to answer (always, offline).
+  Q_PROPERTY(bool battleDecisionMine READ battleDecisionMine NOTIFY battleOfferedChanged)
+  // -- online play (docs/PROTOCOL.md §5) ---------------------------------------
+  Q_PROPERTY(bool online READ online NOTIFY campaignChanged)
+  Q_PROPERTY(int onlineSide READ onlineSide NOTIFY campaignChanged)
+  Q_PROPERTY(QString opponentName READ opponentName NOTIFY campaignChanged)
+  Q_PROPERTY(QString opponentKey READ opponentKey NOTIFY campaignChanged)
+  Q_PROPERTY(QString opponentFlag READ opponentFlag NOTIFY campaignChanged)
+  /// The other human's turn is being played on their machine.
+  Q_PROPERTY(bool remoteTurn READ remoteTurn NOTIFY stateChanged)
+  /// The server ruled the match (match_end): onlineOutcome has the verdict.
+  Q_PROPERTY(bool onlineOver READ onlineOver NOTIFY onlineChanged)
+  Q_PROPERTY(QVariantMap onlineOutcome READ onlineOutcome NOTIFY onlineChanged)
+  Q_PROPERTY(bool peerConnected READ peerConnected NOTIFY onlineChanged)
+  Q_PROPERTY(int peerGraceSeconds READ peerGraceSeconds NOTIFY onlineChanged)
 
 public:
   enum Interaction { Browse = 0, Moving = 1, Attacking = 2 };
@@ -141,6 +161,17 @@ public:
   [[nodiscard]] QString currentSlot() const { return currentSlot_; }
   [[nodiscard]] bool battleOffered() const { return offer_.has_value(); }
   [[nodiscard]] QVariantMap battleOffer() const;
+  [[nodiscard]] bool battleDecisionMine() const { return !online_ || decidingSide_ == onlineSide_; }
+  [[nodiscard]] bool online() const { return online_; }
+  [[nodiscard]] int onlineSide() const { return online_ ? onlineSide_ : -1; }
+  [[nodiscard]] QString opponentName() const;
+  [[nodiscard]] QString opponentKey() const;
+  [[nodiscard]] QString opponentFlag() const;
+  [[nodiscard]] bool remoteTurn() const;
+  [[nodiscard]] bool onlineOver() const { return onlineOver_; }
+  [[nodiscard]] QVariantMap onlineOutcome() const { return onlineOutcome_; }
+  [[nodiscard]] bool peerConnected() const;
+  [[nodiscard]] int peerGraceSeconds() const;
 
   // -- lifecycle ---------------------------------------------------------------
   Q_INVOKABLE bool newGame(const QString& countryKey, const QString& mode, const QString& difficulty,
@@ -148,6 +179,11 @@ public:
   Q_INVOKABLE bool loadGame(const QString& slot);
   Q_INVOKABLE bool saveGame(const QString& slot);
   Q_INVOKABLE void leaveGame();
+  /// An online campaign from the server's campaign_start frame (with its
+  /// replay on a reattach). Wired to LobbyClient::campaignStart.
+  Q_INVOKABLE bool startOnline(const QVariantMap& frame);
+  /// Concede the online match; the server rules it at once.
+  Q_INVOKABLE void resign();
 
   // -- the human's actions ---------------------------------------------------
   Q_INVOKABLE QVariantMap cityInfo(int id) const;
@@ -196,6 +232,9 @@ signals:
   void cityCaptured(int cityId, const QString& byKey);
   void roundEnded(int round);
   void gameEnded(bool victory);
+  void onlineChanged();
+  /// An online campaign is installed (resumed: rebuilt from the log).
+  void onlineCampaignStarted(bool resumed);
 
 private:
   [[nodiscard]] ad::core::PlayerId me() const;
@@ -213,9 +252,36 @@ private:
   void stepAiRound();
   void finishAiRound();
   void startBoardBattle(const ad::core::PendingBattle& pb);
+  void decideBattle(bool autoResolveIt);
   void applyOutcome(const ad::core::PendingBattle& pb, const ad::core::BattleOutcome& out);
   void handleCapture(int city, ad::core::PlayerId by, ad::core::PlayerId from);
+  void afterTurnEnded();
+  void onGameEnded();
   void autosave();
+  /// A notice, unless a log is being replayed.
+  void say(const QString& text, const QString& kind);
+
+  // -- online ----------------------------------------------------------------
+  struct RemoteFrame {
+    int seq{0};
+    int side{-1};
+    QJsonObject data;
+  };
+  [[nodiscard]] int sideOf(ad::core::PlayerId p) const;
+  [[nodiscard]] ad::core::PlayerId humanOf(int side) const;
+  void sendNet(const ad::core::Command& cmd);
+  void sendBattleCommand(const ad::core::BattleCommand& cmd);
+  void reportResult(int winnerSide, const QString& reason);
+  void onRemoteCommand(int seq, int side, const QVariantMap& data);
+  /// Applies what can be applied, in order; stops at the first frame the
+  /// campaign is not ready for (it waits for local progress).
+  void drainInbox();
+  /// True when the frame was consumed (applied, or dropped as noise).
+  bool applyRemote(const RemoteFrame& f);
+  void stepAiRoundToEnd();
+  void beginOnlineBattle(const ad::core::PendingBattle& pb);
+  void onMatchEnd(int winnerSide, const QString& reason, int eloDelta, bool disputed);
+  void endOnline(const QString& reason);
   [[nodiscard]] QVariantMap saveMeta() const;
   [[nodiscard]] ad::core::SearchBudget humanBudget() const;
 
@@ -232,6 +298,16 @@ private:
   int interaction_{Browse};
   std::optional<ad::core::PendingBattle> offer_;  // the battle waiting for a Fight / Auto-resolve answer
   bool offerIsAttack_{false};                       // true: the human's own attack
+  int decidingSide_{-1};                            // online: the seat that answers the prompt
+  LobbyClient* net_{nullptr};
+  bool online_{false};
+  int onlineSide_{-1};
+  bool onlineOver_{false};
+  QVariantMap onlineOutcome_;
+  bool resultSent_{false};
+  bool replaying_{false};
+  bool draining_{false};
+  std::deque<RemoteFrame> inbox_;
   ad::core::PlayerId lastHuman_{-1};
   QString seedText_;
   QString currentSlot_;

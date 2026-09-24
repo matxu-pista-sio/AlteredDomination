@@ -96,7 +96,62 @@ Panel {
             }
         }
 
+        // online: the opponent
+        Rectangle { visible: GameController.online; Layout.preferredWidth: 1; Layout.preferredHeight: 34; color: Style.brassDark }
+        Row {
+            visible: GameController.online
+            spacing: 8
+            Flag {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 30; height: 22
+                source: GameController.opponentFlag
+            }
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 1
+                Text {
+                    text: "vs " + GameController.opponentName
+                    font.family: Style.displayFamily
+                    font.pixelSize: Style.fontBody + 1
+                    font.bold: true
+                    color: Style.onSlate
+                }
+                Row {
+                    spacing: 5
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 7; height: 7; radius: 4
+                        color: GameController.peerConnected ? Style.lamp : Style.danger
+                    }
+                    Text {
+                        text: GameController.peerConnected ? "connected" : "reconnecting…"
+                        font.pixelSize: Style.fontSmall
+                        color: Style.onSlateFaint
+                    }
+                }
+            }
+        }
+
         Item { Layout.fillWidth: true }
+
+        // online: the other commander's turn
+        Row {
+            visible: GameController.remoteTurn
+            spacing: 8
+            Item {
+                width: 16; height: 16
+                anchors.verticalCenter: parent.verticalCenter
+                Rectangle { anchors.fill: parent; radius: 8; color: "transparent"; border.width: 2; border.color: Style.lamp; opacity: 0.35 }
+                Rectangle { width: 6; height: 6; radius: 3; x: 5; y: -1; color: Style.lamp }
+                RotationAnimation on rotation { from: 0; to: 360; duration: 1100; loops: Animation.Infinite; running: Style.animations && GameController.remoteTurn }
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: GameController.opponentName + " is playing…"
+                font.pixelSize: Style.fontSmall + 1
+                color: Style.onSlate
+            }
+        }
 
         // the AI round
         Column {
@@ -117,7 +172,7 @@ Panel {
         }
 
         Button {
-            visible: !GameController.aiThinking
+            visible: !GameController.aiThinking && !GameController.remoteTurn
             text: "End turn"
             primary: true
             enabled: GameController.humanTurn

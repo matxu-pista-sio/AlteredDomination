@@ -35,6 +35,13 @@ BattleController::~BattleController() {
 
 void BattleController::begin(const Campaign& campaign, const PendingBattle& pb, bool attackerHuman,
                              bool defenderHuman, SearchBudget aiBudget) {
+  const bool human[2]{attackerHuman, defenderHuman};
+  const bool remote[2]{false, false};
+  begin(campaign, pb, human, remote, -1, aiBudget);
+}
+
+void BattleController::begin(const Campaign& campaign, const PendingBattle& pb, const bool human[2],
+                             const bool remote[2], int viewSide, SearchBudget aiBudget) {
   ++generation_;
   aiTimer_.stop();
   std::vector<BattleUnitSpec> att, def;
@@ -44,8 +51,13 @@ void BattleController::begin(const Campaign& campaign, const PendingBattle& pb, 
   units_->setBattle(&*battle_);
   initialTypes_.clear();
   for (const BattleUnit& u : battle_->units()) initialTypes_.push_back(u.type);
-  human_[0] = attackerHuman;
-  human_[1] = defenderHuman;
+  human_[0] = human[0];
+  human_[1] = human[1];
+  remote_[0] = remote[0];
+  remote_[1] = remote[1];
+  viewSide_ = viewSide;
+  retreated_ = false;
+  replaying_ = false;
   budget_ = aiBudget;
   const World& w = campaign.world();
   const auto party = [&](PlayerId p, CityId city) {
@@ -79,6 +91,9 @@ void BattleController::end() {
   aiTimer_.stop();
   units_->setBattle(nullptr);
   battle_.reset();
+  remote_[0] = remote_[1] = false;
+  viewSide_ = -1;
+  replaying_ = false;
   selected_.reset();
   highlights_.clear();
   emit battleChanged();
@@ -105,6 +120,7 @@ QString BattleController::phaseKey() const {
 int BattleController::sideToAct() const { return battle_ ? static_cast<int>(battle_->sideToAct()) : 0; }
 
 int BattleController::viewSide() const {
+  if (viewSide_ >= 0) return viewSide_;
   if (human_[0] && !human_[1]) return 0;
   if (human_[1] && !human_[0]) return 1;
   if (human_[0] && human_[1] && battle_) {
@@ -140,6 +156,16 @@ QString BattleController::status() const {
   if (!battle_) return {};
   const QString me = parties_[viewSide()].value("name").toString();
   const QString enemy = parties_[1 - viewSide()].value("name").toString();
+  if (!human_[0] && !human_[1]) {  // watching the relay
+    switch (battle_->phase()) {
+      case BattlePhase::Deploy: return QStringLiteral("Watching: the formations are being laid out");
+      case BattlePhase::Promote: return QStringLiteral("Watching: the generals are being chosen");
+      case BattlePhase::Play:
+        return QStringLiteral("Watching: %1 to act")
+            .arg(parties_[static_cast<int>(battle_->sideToAct())].value("name").toString());
+      case BattlePhase::Over: return QStringLiteral("Battle over");
+    }
+  }
   switch (battle_->phase()) {
     case BattlePhase::Deploy:
       return battle_->isReady(sideOf(viewSide())) ? QStringLiteral("Waiting for %1 to deploy").arg(enemy)
@@ -305,15 +331,54 @@ QVariantMap BattleController::actionMap(const char* kind, Side side, Cell from, 
   return m;
 }
 
+bool BattleController::applyCmd(const BattleCommand& cmd, bool fromRemote) {
+  if (!battle_) return false;
+  if (!ok(battle_->apply(cmd))) return false;
+  if (!fromRemote) emit commandApplied(cmd);
+  return true;
+}
+
 void BattleController::applyHuman(const BattleCommand& cmd, const QVariantMap& action) {
   if (!battle_) return;
-  const BattleStatus st = battle_->apply(cmd);
-  if (!ok(st)) {
+  if (!applyCmd(cmd)) {
     updateHighlights();
     return;
   }
   if (!action.isEmpty()) emit actionPerformed(action);
   afterChange();
+}
+
+void BattleController::applyRemote(const BattleCommand& cmd) {
+  if (!battle_ || over()) return;
+  // The animation, from the state before the command lands.
+  QVariantMap action;
+  std::visit(
+      [&](const auto& c) {
+        using T = std::decay_t<decltype(c)>;
+        if constexpr (std::is_same_v<T, Rearrange>) action = actionMap("swap", c.side, c.from, c.to);
+        else if constexpr (std::is_same_v<T, Promote>) action = actionMap("promote", c.side, c.cell, c.cell);
+        else if constexpr (std::is_same_v<T, Demote>) action = actionMap("demote", c.side, c.cell, c.cell);
+        else if constexpr (std::is_same_v<T, MoveUnit>) action = actionMap("move", c.side, c.from, c.to);
+        else if constexpr (std::is_same_v<T, Strike>) action = actionMap("strike", c.side, c.from, c.target);
+        else if constexpr (std::is_same_v<T, Surrender>)
+          emit notice(QStringLiteral("%1 surrenders").arg(parties_[static_cast<int>(c.side)].value("name").toString()));
+        else if constexpr (std::is_same_v<T, OfferDraw>) {
+          if (!battle_->drawOffered(other(c.side)))
+            emit notice(QStringLiteral("%1 offers a draw").arg(parties_[static_cast<int>(c.side)].value("name").toString()));
+        }
+      },
+      cmd);
+  if (!applyCmd(cmd, true)) {
+    qWarning("battle: a relayed command was refused by the board (desync)");
+    return;
+  }
+  if (!action.isEmpty() && !replaying_) emit actionPerformed(action);
+  afterChange();
+}
+
+void BattleController::setReplaying(bool on) {
+  replaying_ = on;
+  if (!on && battle_) kickAi();
 }
 
 void BattleController::afterChange() {
@@ -357,59 +422,65 @@ void BattleController::updateHighlights() {
 // -- the AI sides ---------------------------------------------------------------
 
 void BattleController::kickAi() {
-  if (!battle_ || over() || busy()) return;
+  if (!battle_ || over() || busy() || replaying_) return;
   switch (battle_->phase()) {
     case BattlePhase::Deploy:
     case BattlePhase::Promote:
       for (const Side s : {Side::Attacker, Side::Defender})
-        if (!humanSide(s) && !battle_->isReady(s)) {
+        if (aiSide(s) && !battle_->isReady(s)) {
           aiTimer_.start(battle_->phase() == BattlePhase::Deploy ? kAiSetupDelayMs : kAiPromoteDelayMs);
           return;
         }
       return;
     case BattlePhase::Play:
-      if (!humanSide(battle_->sideToAct())) aiTimer_.start(kAiActionDelayMs);
+      if (aiSide(battle_->sideToAct())) aiTimer_.start(kAiActionDelayMs);
       return;
     case BattlePhase::Over: return;
   }
 }
 
 void BattleController::aiAct() {
-  if (!battle_ || over() || busy()) return;
+  if (!battle_ || over() || busy() || replaying_) return;
   Battle& b = *battle_;
   if (b.phase() == BattlePhase::Deploy) {
     for (const Side s : {Side::Attacker, Side::Defender})
-      if (!humanSide(s) && !b.isReady(s)) b.apply(Ready{s});
+      if (aiSide(s) && !b.isReady(s)) applyCmd(Ready{s});
     afterChange();
     return;
   }
   if (b.phase() == BattlePhase::Promote) {
     for (const Side s : {Side::Attacker, Side::Defender})
-      if (!humanSide(s) && !b.isReady(s)) {
-        for (const Cell& c : TacticalAi::promote(b, s)) emit actionPerformed(actionMap("promote", s, c, c));
-        b.apply(Ready{s});
+      if (aiSide(s) && !b.isReady(s)) {
+        // The AI picks on a copy; the picks land here one command at a
+        // time, so each is announced (and relayed) like a human's.
+        Battle probe = b;
+        for (const Cell& c : TacticalAi::promote(probe, s)) {
+          const QVariantMap m = actionMap("promote", s, c, c);
+          if (applyCmd(Promote{s, c})) emit actionPerformed(m);
+        }
+        applyCmd(Ready{s});
       }
     afterChange();
     return;
   }
   const Side s = b.sideToAct();
-  if (humanSide(s)) return;
+  if (!aiSide(s)) return;
   if (TacticalAi::wantsSurrender(b, s)) {
-    b.apply(Surrender{s});
+    applyCmd(Surrender{s});
     emit notice(QStringLiteral("%1 surrenders").arg(parties_[static_cast<int>(s)].value("name").toString()));
     afterChange();
     return;
   }
   if (TacticalAi::wantsDraw(b, s)) {
     if (b.drawOffered(other(s))) {
-      b.apply(OfferDraw{s});  // accepts: the battle is drawn
+      applyCmd(OfferDraw{s});  // accepts: the battle is drawn
       afterChange();
       return;
     }
     if (!aiOfferedDraw_[static_cast<int>(s)]) {
       aiOfferedDraw_[static_cast<int>(s)] = true;
-      b.apply(OfferDraw{s});
-      b.apply(EndBattleTurn{s});  // the offer stands through the enemy's turn
+      applyCmd(OfferDraw{s});
+      applyCmd(EndBattleTurn{s});  // the offer stands through the enemy's turn
       emit notice(QStringLiteral("%1 offers a draw").arg(parties_[static_cast<int>(s)].value("name").toString()));
       afterChange();
       return;
@@ -439,18 +510,19 @@ void BattleController::aiAct() {
 void BattleController::applyAiAction(const BattleAction& a) {
   Battle& b = *battle_;
   const Side s = b.sideToAct();
+  if (!aiSide(s)) return;  // the roles changed while the search ran
   switch (a.kind) {
     case BattleAction::Kind::Move: {
       const QVariantMap m = actionMap("move", s, a.from, a.to);
-      if (ok(b.apply(MoveUnit{s, a.from, a.to}))) emit actionPerformed(m);
+      if (applyCmd(MoveUnit{s, a.from, a.to})) emit actionPerformed(m);
       break;
     }
     case BattleAction::Kind::Strike: {
       const QVariantMap m = actionMap("strike", s, a.from, a.to);
-      if (ok(b.apply(Strike{s, a.from, a.to}))) emit actionPerformed(m);
+      if (applyCmd(Strike{s, a.from, a.to})) emit actionPerformed(m);
       break;
     }
-    case BattleAction::Kind::End: b.apply(EndBattleTurn{s}); break;
+    case BattleAction::Kind::End: applyCmd(EndBattleTurn{s}); break;
   }
   afterChange();
 }
@@ -486,15 +558,9 @@ void BattleController::quit() {
   thinking_ = false;
   if (!over()) {
     if (battle_->phase() == BattlePhase::Play) {
-      battle_->apply(Surrender{sideOf(viewSide())});
+      applyCmd(Surrender{sideOf(viewSide())});
     } else {
-      // Before Play there is no board to concede: the attacker retreats.
-      BattleOutcome o;
-      o.winner = BattleWinner::Defender;
-      for (const BattleUnit& u : battle_->units())
-        (u.side == Side::Attacker ? o.attackerSurvivors : o.defenderSurvivors).push_back(u.id);
-      outcome_ = o;
-      emit finished();
+      retreat(sideOf(viewSide()));
       return;
     }
   }
@@ -502,8 +568,30 @@ void BattleController::quit() {
   leave();
 }
 
+void BattleController::retreat(Side side) {
+  // Before Play there is no board to concede: the side that leaves loses
+  // the battle as it stands and everyone survives - a retreating attacker
+  // goes home, a retreating defender abandons the city.
+  BattleOutcome o;
+  o.winner = side == Side::Attacker ? BattleWinner::Defender : BattleWinner::Attacker;
+  for (const BattleUnit& u : battle_->units())
+    (u.side == Side::Attacker ? o.attackerSurvivors : o.defenderSurvivors).push_back(u.id);
+  outcome_ = o;
+  retreated_ = true;
+  retreatSide_ = side;
+  emit finished();
+}
+
+void BattleController::remoteRetreat(int side) {
+  if (!battle_ || over() || side < 0 || side > 1) return;
+  ++generation_;
+  aiTimer_.stop();
+  thinking_ = false;
+  retreat(sideOf(side));
+}
+
 void BattleController::autoResolve() {
-  if (!battle_ || over() || busy()) return;
+  if (!battle_ || over() || busy() || remote_[0] || remote_[1]) return;
   ++generation_;
   aiTimer_.stop();
   selected_.reset();

@@ -13,6 +13,7 @@ Popup {
 
     readonly property var o: GameController.battleOffer
     readonly property bool attacking: o.kind === "attack"
+    readonly property bool mine: GameController.battleDecisionMine
 
     modal: true
     focus: true
@@ -52,8 +53,8 @@ Popup {
 
     contentItem: Column {
         spacing: 14
-        Shortcut { sequence: "A"; enabled: prompt.opened; onActivated: GameController.acceptBattle(true) }
-        Shortcut { sequences: ["F", "Return", "Enter"]; enabled: prompt.opened; onActivated: GameController.acceptBattle(false) }
+        Shortcut { sequence: "A"; enabled: prompt.opened && prompt.mine; onActivated: GameController.acceptBattle(true) }
+        Shortcut { sequences: ["F", "Return", "Enter"]; enabled: prompt.opened && prompt.mine; onActivated: GameController.acceptBattle(false) }
         Text {
             width: parent.width
             text: prompt.attacking ? "Assault on " + (prompt.o.toName || "")
@@ -100,12 +101,14 @@ Popup {
         }
         Text {
             width: parent.width
-            text: "Fight it yourself on the board, or let the engine play both sides at this campaign's difficulty."
+            text: prompt.mine ? "Fight it yourself on the board, or let the engine play both sides at this campaign's difficulty."
+                              : (prompt.o.decidingName || "The opponent") + " decides: the board, or the engine. Waiting…"
             font.pixelSize: Style.fontBody
             color: Style.ink
             wrapMode: Text.Wrap
         }
         Row {
+            visible: prompt.mine
             anchors.right: parent.right
             spacing: 8
             Button {
@@ -121,5 +124,5 @@ Popup {
             }
         }
     }
-    onOpened: fightButton.forceActiveFocus()
+    onOpened: if (prompt.mine) fightButton.forceActiveFocus()
 }

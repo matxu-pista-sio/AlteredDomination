@@ -128,6 +128,11 @@ FocusScope {
         function onFinished() { page.finished() }
         function onNotice(text) { GameController.notice(text, "info") }
     }
+    Connections {
+        target: GameController
+        // online: the server's verdict ends the match wherever the board stands
+        function onOnlineChanged() { if (GameController.onlineOver) page.finished() }
+    }
 
     component Party: Column {
         id: party
@@ -440,6 +445,7 @@ FocusScope {
 
                 Button {
                     Layout.fillWidth: true
+                    visible: !GameController.online
                     text: "Auto-resolve"
                     enabled: !page.bc.over && !page.bc.busy
                     onClicked: page.bc.autoResolve()
@@ -449,7 +455,8 @@ FocusScope {
                 Button {
                     Layout.fillWidth: true
                     text: "Quit"
-                    enabled: !page.bc.over && !page.bc.busy
+                    // a watcher has nothing to concede; the board plays out on the other machine
+                    enabled: !page.bc.over && !page.bc.busy && page.bc.isHuman(page.mySide)
                     onClicked: quitDialog.open()
                     ToolTip.visible: hovered
                     ToolTip.text: "Escape"
@@ -478,7 +485,8 @@ FocusScope {
     ConfirmDialog {
         id: quitDialog
         title: "Quit the battle?"
-        text: page.bc.phase === 2 ? "Your side concedes the battle as it stands." : "The attackers withdraw and nothing is lost."
+        text: page.bc.phase === 2 ? "Your side concedes the battle as it stands."
+            : page.mySide === 0 ? "The attackers withdraw and nothing is lost." : "The defenders abandon the city and nothing is lost."
         confirmText: "Quit"
         destructive: true
         onAccepted: page.bc.quit()

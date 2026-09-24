@@ -188,6 +188,25 @@ FocusScope {
         onMenu: page.menu()
     }
 
+    // online: the opponent dropped; the server holds the match for a while
+    Rectangle {
+        visible: GameController.online && !GameController.peerConnected && !GameController.onlineOver
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: topBar.bottom
+        anchors.topMargin: 10
+        width: dropLabel.implicitWidth + 28
+        height: 32
+        radius: Style.radius
+        color: Qt.alpha(Style.danger, 0.85)
+        Text {
+            id: dropLabel
+            anchors.centerIn: parent
+            text: GameController.opponentName + " lost the connection - the match waits up to " + GameController.peerGraceSeconds + " s for them"
+            font.pixelSize: Style.fontSmall + 1
+            color: Style.paper
+        }
+    }
+
     // hotseat: the table changes hands
     Rectangle {
         id: handover
@@ -240,6 +259,9 @@ FocusScope {
         }
         function onGameEnded(victory) {
             Audio.play(victory ? "hoverhome" : "explosion")
+        }
+        function onOnlineChanged() {
+            if (GameController.onlineOver) Audio.play(GameController.onlineOutcome.won ? "hoverhome" : "explosion")
         }
     }
 }
