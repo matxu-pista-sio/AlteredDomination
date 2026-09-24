@@ -31,12 +31,18 @@ A Natural Earth feature becomes a playable country when **all** hold:
 Dependencies and disputed territories that pass (Puerto Rico, Hong Kong,
 Western Sahara, Palestine, Greenland, New Caledonia, …) are countries in
 the game exactly like the legacy map treated them; the generator writes
-`"sovereign": "<iso2>"` for information only. Somaliland and Northern
-Cyprus have no ISO code and are folded into Somalia and Cyprus.
+`"sovereign": "<iso3>"` for information only. Somaliland, Northern Cyprus
+and the Siachen Glacier have no ISO code and are folded into Somalia,
+Cyprus and India (their polygons are merged, their places re-homed). A
+feature that reuses another feature's code (Ashmore and Cartier → `au`)
+is dropped in favour of the more populous one.
 
-The result is ≈ 190 countries. `name` is Natural Earth's `NAME_LONG`
-where `NAME` is an abbreviation ("Dem. Rep. Congo" → "Democratic Republic
-of the Congo"), `key` is the lower-case ISO code.
+The result is **206 countries**. `name` is Natural Earth's `NAME_LONG`
+("Dem. Rep. Congo" → "Democratic Republic of the Congo"), `short` its
+`NAME`, `key` the lower-case ISO code, `iso3` the `ADM0_A3`. GDP is the
+World Bank's latest year (`gdpYear`), falling back to Natural Earth's
+`GDP_MD` (`gdpYear: 0`) for Taiwan and the territories the Bank does not
+report.
 
 ## 3. Projection
 
@@ -82,19 +88,26 @@ collisions), `tier` (GAME_DESIGN.md §1) and `isCapital`.
 
 The link graph is built on the projected points:
 
-1. Delaunay triangulation of all cities (`scipy` is not a dependency: the
-   script carries a small Bowyer–Watson).
-2. Keep every edge with length ≤ `kLandLink = 140` map units (≈ 1 200 km).
-3. Compute the minimum spanning tree of the *full* Delaunay graph and add
+1. Delaunay triangulation of all cities (Shapely's GEOS binding).
+2. **Gabriel filter**: an edge survives only when no third city lies inside
+   the circle that has the edge as its diameter. The raw Delaunay graph
+   gives every city six links; the Gabriel subgraph gives about four and
+   leaves the map with real chokepoints.
+3. Keep every surviving edge with length ≤ `kLandLink = 140` map units.
+4. Compute the minimum spanning tree of the *full* Delaunay graph and add
    every MST edge that is missing — this is what connects islands and
    continents through their shortest crossings (Bering Strait, Gibraltar,
    Sicily–Tunisia, Indonesia–Australia, Iceland …) and guarantees the
    graph is connected.
-4. Any edge longer than `kLandLink` is flagged `"sea": true` and drawn
-   dashed.
+5. **Antimeridian**: a city within 300 units of the map's east edge and one
+   within 300 units of the west edge are linked when their *wrapped*
+   distance is ≤ `kWrapLink = 220` (Anadyr–Nome); such links carry
+   `"wrap": true` and the client draws them off both edges.
+6. A link is `"sea": true` when less than 80 % of its segment lies over
+   land (the union of all country polygons); sea links are drawn dashed.
 
-Every link is stored once (`a < b`) and both cities list it; the tests
-assert symmetry, connectivity and that no city is isolated.
+Every link is stored once (`a < b`) with its great-circle length in km;
+the checker asserts uniqueness, connectivity and that no city is isolated.
 
 ## 6. Territories and colours
 
@@ -106,10 +119,11 @@ assert symmetry, connectivity and that no city is isolated.
   country that contain no city fall to the nearest city of that country.
 - **Country outline**: the Natural Earth polygon, simplified with the same
   tolerance, as one path string per country (for the border layer).
-- **Banner colour**: assigned by the generator from a 48-hue table so that
-  no two countries that touch on the map share a hue (greedy colouring in
-  descending population order); saved per country, part of the data so
-  the legend is stable across runs.
+- **Banner colour**: assigned by the generator from 24 hues at two
+  lightness levels so that no two countries that touch on the map *or are
+  joined by a link* share a hue (greedy colouring in descending population
+  order, each country taking the hue farthest from its neighbours'); saved
+  per country, part of the data so the legend is stable across runs.
 
 ## 7. Units
 

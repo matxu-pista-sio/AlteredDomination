@@ -81,8 +81,17 @@ jobs:
           python-version: "3.12"
       - name: Validate the committed data
         run: |
-          if [ -f scripts/check_world.py ]; then python3 scripts/check_world.py; fi
-          if [ -f scripts/check_units.py ]; then python3 scripts/check_units.py; fi
+          python3 scripts/check_world.py
+          python3 scripts/check_units.py
+
+      # The generator must reproduce the committed world byte for byte
+      # (same pinned Shapely/GEOS wheel as the one it was generated with).
+      - name: Regenerate the world and diff
+        run: |
+          pip install "shapely==2.1.2" "numpy>=2"
+          python3 scripts/gen_world_data.py --fetch
+          python3 scripts/gen_unit_svgs.py
+          git diff --exit-code -- assets/world assets/units
 
   # Compile check of the Qt client (and the tests once more from the
   # desktop-debug tree), plus qmllint over every QML module.
