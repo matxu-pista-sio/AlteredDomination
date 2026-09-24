@@ -43,7 +43,10 @@ Item {
     function cityAt(vx, vy) {
         const p = canvas.mapFromItem(map, vx, vy)
         const item = canvas.childAt(p.x, p.y)
+        // markers and territories both carry a cityId (duck-typed on purpose)
+        // qmllint disable missing-property
         return item && item.cityId !== undefined ? item.cityId : -1
+        // qmllint enable missing-property
     }
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }

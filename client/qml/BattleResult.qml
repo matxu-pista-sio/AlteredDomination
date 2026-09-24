@@ -39,16 +39,17 @@ Rectangle {
         Repeater {
             model: parent.list
             Row {
+                id: loss
                 required property var modelData
                 spacing: 8
                 Rectangle {
                     width: 22; height: 22; radius: 11
                     color: Style.brass
-                    Image { anchors.fill: parent; anchors.margins: 3; source: parent.parent.modelData.icon; sourceSize: Qt.size(44, 44) }
+                    Image { anchors.fill: parent; anchors.margins: 3; source: loss.modelData.icon; sourceSize: Qt.size(44, 44) }
                 }
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: parent.modelData.count + " × " + parent.modelData.name
+                    text: loss.modelData.count + " × " + loss.modelData.name
                     font.pixelSize: Style.fontBody
                     color: Style.onSlate
                 }

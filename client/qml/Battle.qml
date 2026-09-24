@@ -20,16 +20,16 @@ FocusScope {
     focus: true
 
     readonly property var bc: GameController.battle
-    readonly property int length: bc.boardLength
-    readonly property int rows: bc.boardWidth
-    readonly property bool mirrored: bc.viewSide === 1
+    readonly property int length: page.bc.boardLength
+    readonly property int rows: page.bc.boardWidth
+    readonly property bool mirrored: page.bc.viewSide === 1
     readonly property int cell: Math.max(26, Math.floor(Math.min((boardArea.width - 32) / length,
                                                                 (boardArea.height - 32) / rows)))
-    readonly property var leftParty: mirrored ? bc.defender : bc.attacker
-    readonly property var rightParty: mirrored ? bc.attacker : bc.defender
+    readonly property var leftParty: mirrored ? page.bc.defender : page.bc.attacker
+    readonly property var rightParty: mirrored ? page.bc.attacker : page.bc.defender
     readonly property var highlightMap: {
         const m = {}
-        for (const h of bc.highlights) m[h.x + "," + h.y] = h.kind
+        for (const h of page.bc.highlights) m[h.x + "," + h.y] = h.kind
         return m
     }
     property int cursorX: -1
@@ -40,17 +40,17 @@ FocusScope {
 
     function sx(x) { return mirrored ? length - 1 - x : x }
     function centerOf(x, y) { return Qt.point(sx(x) * cell + cell / 2, y * cell + cell / 2) }
-    function sideColor(side) { return side === 0 ? bc.attacker.color : bc.defender.color }
+    function sideColor(side) { return side === 0 ? page.bc.attacker.color : page.bc.defender.color }
     function moveCursor(dx, dy) {
         if (cursorX < 0) { cursorX = mirrored ? length - 1 : 0; cursorY = 0; return }
         cursorX = Math.max(0, Math.min(length - 1, cursorX + (mirrored ? -dx : dx)))
         cursorY = Math.max(0, Math.min(rows - 1, cursorY + dy))
     }
     function showCard(x, y) {
-        const u = bc.unitAt(x, y)
+        const u = page.bc.unitAt(x, y)
         if (!u.typeKey) return
         unitCard.info = GameController.catalog.info(u.typeKey)
-        unitCard.state = (u.side === 0 ? bc.attacker.name : bc.defender.name)
+        unitCard.state = (u.side === 0 ? page.bc.attacker.name : page.bc.defender.name)
                          + (u.general ? "  ·  general" : "") + (u.acted ? "  ·  has acted this turn" : "")
         unitCard.x = Math.min(page.width - unitCard.width - 12, boardArea.x + board.x + sx(x) * cell + cell + 8)
         unitCard.y = Math.min(page.height - unitCard.height - 12, boardArea.y + board.y + y * cell)
@@ -61,21 +61,21 @@ FocusScope {
         switch (event.key) {
         case Qt.Key_Escape:
             if (unitCard.opened) unitCard.close()
-            else if (bc.selectedX >= 0) bc.clearSelection()
-            else if (bc.over) bc.leave()
+            else if (page.bc.selectedX >= 0) page.bc.clearSelection()
+            else if (page.bc.over) page.bc.leave()
             else quitDialog.open()
             break
         case Qt.Key_Return: case Qt.Key_Enter:
-            if (bc.over) bc.leave()
-            else if (bc.canReady) bc.ready()
-            else if (bc.myTurn) bc.endTurn()
+            if (page.bc.over) page.bc.leave()
+            else if (page.bc.canReady) page.bc.ready()
+            else if (page.bc.myTurn) page.bc.endTurn()
             break
-        case Qt.Key_D: if (bc.myTurn) bc.offerDraw(); break
+        case Qt.Key_D: if (page.bc.myTurn) page.bc.offerDraw(); break
         case Qt.Key_Left: moveCursor(-1, 0); break
         case Qt.Key_Right: moveCursor(1, 0); break
         case Qt.Key_Up: moveCursor(0, -1); break
         case Qt.Key_Down: moveCursor(0, 1); break
-        case Qt.Key_Space: if (cursorX >= 0) bc.cellClicked(cursorX, cursorY); break
+        case Qt.Key_Space: if (cursorX >= 0) page.bc.cellClicked(cursorX, cursorY); break
         default: return
         }
         event.accepted = true
@@ -137,16 +137,16 @@ FocusScope {
                 Flag { Layout.preferredWidth: 44; Layout.preferredHeight: 33; source: page.leftParty.flag || "" }
                 Column {
                     Text {
-                        text: (page.leftParty.name || "") + (bc.isHuman(page.mirrored ? 1 : 0) ? "  (you)" : "")
+                        text: (page.leftParty.name || "") + (page.bc.isHuman(page.mirrored ? 1 : 0) ? "  (you)" : "")
                         font.family: Style.displayFamily
                         font.pixelSize: Style.fontBody + 4
                         font.bold: true
                         color: Style.onSlate
                     }
                     Text {
-                        readonly property int units: page.mirrored ? bc.defenderUnits : bc.attackerUnits
-                        readonly property int generals: page.mirrored ? bc.defenderGenerals : bc.attackerGenerals
-                        readonly property int power: page.mirrored ? bc.defenderPower : bc.attackerPower
+                        readonly property int units: page.mirrored ? page.bc.defenderUnits : page.bc.attackerUnits
+                        readonly property int generals: page.mirrored ? page.bc.defenderGenerals : page.bc.attackerGenerals
+                        readonly property int power: page.mirrored ? page.bc.defenderPower : page.bc.attackerPower
                         text: units + " units  ·  power " + power + "  ·  " + generals + " general" + (generals === 1 ? "" : "s")
                         font.pixelSize: Style.fontSmall
                         font.features: { "tnum": 1 }
@@ -161,7 +161,7 @@ FocusScope {
                     spacing: 2
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: bc.phase === 0 ? "DEPLOY" : bc.phase === 1 ? "PROMOTE" : bc.phase === 2 ? "TURN " + bc.turn : "BATTLE OVER"
+                        text: page.bc.phase === 0 ? "DEPLOY" : page.bc.phase === 1 ? "PROMOTE" : page.bc.phase === 2 ? "TURN " + page.bc.turn : "BATTLE OVER"
                         font.family: Style.displayFamily
                         font.pixelSize: Style.fontTitle
                         font.bold: true
@@ -174,7 +174,7 @@ FocusScope {
                         // the thinking spinner
                         Item {
                             width: 16; height: 16
-                            visible: bc.busy
+                            visible: page.bc.busy
                             anchors.verticalCenter: parent.verticalCenter
                             Rectangle {
                                 anchors.fill: parent
@@ -191,14 +191,14 @@ FocusScope {
                                 transformOrigin: Item.Center
                             }
                             RotationAnimation on rotation {
-                                running: bc.busy && Style.animations
+                                running: page.bc.busy && Style.animations
                                 loops: Animation.Infinite
                                 from: 0; to: 360
                                 duration: 900
                             }
                         }
                         Text {
-                            text: bc.status + "  ·  " + bc.cityName
+                            text: page.bc.status + "  ·  " + page.bc.cityName
                             font.pixelSize: Style.fontSmall + 1
                             color: Style.onSlate
                         }
@@ -210,7 +210,7 @@ FocusScope {
                 Column {
                     Text {
                         anchors.right: parent.right
-                        text: (page.rightParty.name || "") + (bc.isHuman(page.mirrored ? 0 : 1) ? "  (you)" : "")
+                        text: (page.rightParty.name || "") + (page.bc.isHuman(page.mirrored ? 0 : 1) ? "  (you)" : "")
                         font.family: Style.displayFamily
                         font.pixelSize: Style.fontBody + 4
                         font.bold: true
@@ -218,9 +218,9 @@ FocusScope {
                     }
                     Text {
                         anchors.right: parent.right
-                        readonly property int units: page.mirrored ? bc.attackerUnits : bc.defenderUnits
-                        readonly property int generals: page.mirrored ? bc.attackerGenerals : bc.defenderGenerals
-                        readonly property int power: page.mirrored ? bc.attackerPower : bc.defenderPower
+                        readonly property int units: page.mirrored ? page.bc.attackerUnits : page.bc.defenderUnits
+                        readonly property int generals: page.mirrored ? page.bc.attackerGenerals : page.bc.defenderGenerals
+                        readonly property int power: page.mirrored ? page.bc.attackerPower : page.bc.defenderPower
                         text: units + " units  ·  power " + power + "  ·  " + generals + " general" + (generals === 1 ? "" : "s")
                         font.pixelSize: Style.fontSmall
                         font.features: { "tnum": 1 }
@@ -263,8 +263,8 @@ FocusScope {
                         width: page.cell
                         height: page.cell
                         dark: (bx + by) % 2 === 0
-                        zone: bc.inZone(0, bx, by) ? 0 : bc.inZone(1, bx, by) ? 1 : -1
-                        zoneColor: zone === 0 ? bc.attacker.color : bc.defender.color
+                        zone: page.bc.inZone(0, bx, by) ? 0 : page.bc.inZone(1, bx, by) ? 1 : -1
+                        zoneColor: zone === 0 ? page.bc.attacker.color : page.bc.defender.color
                         highlight: page.highlightMap[bx + "," + by] || 0
                         hovered: page.hoverX === bx && page.hoverY === by
                         cursor: page.cursorX === bx && page.cursorY === by
@@ -276,7 +276,7 @@ FocusScope {
                         }
                         TapHandler {
                             acceptedButtons: Qt.LeftButton
-                            onTapped: { page.cursorX = -1; bc.cellClicked(square.bx, square.by) }
+                            onTapped: { page.cursorX = -1; page.bc.cellClicked(square.bx, square.by) }
                         }
                         TapHandler {
                             acceptedButtons: Qt.RightButton
@@ -309,7 +309,7 @@ FocusScope {
                 }
 
                 Repeater {
-                    model: bc.units
+                    model: page.bc.units
                     UnitChip {
                         required property var model
                         x: page.sx(model.x) * page.cell
@@ -319,10 +319,10 @@ FocusScope {
                         icon: model.icon
                         banner: page.sideColor(model.side)
                         general: model.general
-                        acted: model.acted && bc.phase === 2
+                        acted: model.acted && page.bc.phase === 2
                         alive: model.alive
-                        selected: bc.selectedX === model.x && bc.selectedY === model.y
-                        mine: bc.isHuman(model.side)
+                        selected: page.bc.selectedX === model.x && page.bc.selectedY === model.y
+                        mine: page.bc.isHuman(model.side)
                         z: alive ? 1 : 2
                     }
                 }
@@ -356,9 +356,9 @@ FocusScope {
 
                 Text {
                     Layout.fillWidth: true
-                    text: bc.phase === 0 ? "Click one of your units, then a cell in your zone, to move or swap it. Ready when the formation suits you."
-                        : bc.phase === 1 ? "Click your units to crown " + bc.generalsRequired(bc.viewSide) + " general" + (bc.generalsRequired(bc.viewSide) === 1 ? "" : "s") + " (" + bc.generalsPromoted(bc.viewSide) + " chosen). A crowned unit becomes a soldier for good."
-                        : bc.phase === 2 ? "Click a unit, then a green cell to move or a red one to strike. Right-click a unit for its card."
+                    text: page.bc.phase === 0 ? "Click one of your units, then a cell in your zone, to move or swap it. Ready when the formation suits you."
+                        : page.bc.phase === 1 ? "Click your units to crown " + page.bc.generalsRequired(page.bc.viewSide) + " general" + (page.bc.generalsRequired(page.bc.viewSide) === 1 ? "" : "s") + " (" + page.bc.generalsPromoted(page.bc.viewSide) + " chosen). A crowned unit becomes a soldier for good."
+                        : page.bc.phase === 2 ? "Click a unit, then a green cell to move or a red one to strike. Right-click a unit for its card."
                         : ""
                     font.pixelSize: Style.fontSmall + 1
                     color: Style.onSlateFaint
@@ -369,14 +369,14 @@ FocusScope {
 
                 // actions left
                 Row {
-                    visible: bc.phase === 2
+                    visible: page.bc.phase === 2
                     spacing: 4
                     Repeater {
-                        model: Math.max(bc.actionsLeft, bc.sideToAct === 0 ? bc.attackerGenerals : bc.defenderGenerals)
+                        model: Math.max(page.bc.actionsLeft, page.bc.sideToAct === 0 ? page.bc.attackerGenerals : page.bc.defenderGenerals)
                         Rectangle {
                             required property int index
                             width: 10; height: 10; radius: 5
-                            color: index < bc.actionsLeft ? Style.lamp : "transparent"
+                            color: index < page.bc.actionsLeft ? Style.lamp : "transparent"
                             border.width: 1
                             border.color: Style.brassDark
                         }
@@ -384,49 +384,49 @@ FocusScope {
                 }
 
                 Button {
-                    visible: bc.phase < 2
+                    visible: page.bc.phase < 2
                     text: "Ready"
                     primary: true
-                    enabled: bc.canReady
-                    onClicked: bc.ready()
+                    enabled: page.bc.canReady
+                    onClicked: page.bc.ready()
                     ToolTip.visible: hovered
                     ToolTip.text: "Enter"
                 }
                 Button {
-                    visible: bc.phase === 2
+                    visible: page.bc.phase === 2
                     text: "End turn"
                     primary: true
-                    enabled: bc.myTurn
-                    onClicked: bc.endTurn()
+                    enabled: page.bc.myTurn
+                    onClicked: page.bc.endTurn()
                     ToolTip.visible: hovered
                     ToolTip.text: "Enter"
                 }
                 Button {
-                    visible: bc.phase === 2
-                    text: bc.drawOfferedByEnemy ? "Accept draw" : bc.drawOfferedByMe ? "Draw offered" : "Offer draw"
-                    enabled: bc.myTurn && !bc.drawOfferedByMe
-                    highlighted: bc.drawOfferedByEnemy
-                    onClicked: bc.offerDraw()
+                    visible: page.bc.phase === 2
+                    text: page.bc.drawOfferedByEnemy ? "Accept draw" : page.bc.drawOfferedByMe ? "Draw offered" : "Offer draw"
+                    enabled: page.bc.myTurn && !page.bc.drawOfferedByMe
+                    highlighted: page.bc.drawOfferedByEnemy
+                    onClicked: page.bc.offerDraw()
                     ToolTip.visible: hovered
                     ToolTip.text: "D"
                 }
                 Button {
-                    visible: bc.phase === 2
+                    visible: page.bc.phase === 2
                     text: "Surrender"
                     danger: true
-                    enabled: !bc.over && !bc.busy
+                    enabled: !page.bc.over && !page.bc.busy
                     onClicked: surrenderDialog.open()
                 }
                 Button {
                     text: "Auto-resolve"
-                    enabled: !bc.over && !bc.busy
-                    onClicked: bc.autoResolve()
+                    enabled: !page.bc.over && !page.bc.busy
+                    onClicked: page.bc.autoResolve()
                     ToolTip.visible: hovered
                     ToolTip.text: "The engine plays both sides from here"
                 }
                 Button {
                     text: "Quit"
-                    enabled: !bc.over && !bc.busy
+                    enabled: !page.bc.over && !page.bc.busy
                     onClicked: quitDialog.open()
                     ToolTip.visible: hovered
                     ToolTip.text: "Escape"
@@ -443,19 +443,19 @@ FocusScope {
         text: "Your side loses the battle and every unit on the board."
         confirmText: "Surrender"
         destructive: true
-        onAccepted: bc.surrender()
+        onAccepted: page.bc.surrender()
     }
     ConfirmDialog {
         id: quitDialog
         title: "Quit the battle?"
-        text: bc.phase === 2 ? "Your side concedes the battle as it stands." : "The attackers withdraw and nothing is lost."
+        text: page.bc.phase === 2 ? "Your side concedes the battle as it stands." : "The attackers withdraw and nothing is lost."
         confirmText: "Quit"
         destructive: true
-        onAccepted: bc.quit()
+        onAccepted: page.bc.quit()
     }
 
     BattleResult {
         anchors.fill: parent
-        onLeave: bc.leave()
+        onLeave: page.bc.leave()
     }
 }
