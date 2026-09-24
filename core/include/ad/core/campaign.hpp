@@ -107,9 +107,9 @@ public:
   [[nodiscard]] Rng& rng() noexcept { return rng_; }
   [[nodiscard]] int nextUnitId() const noexcept { return nextUnitId_; }
 
-  // -- save/load hooks (save.cpp) ---------------------------------------------
-  struct Raw;  // opaque
+  // -- save/load hooks (save.cpp) and the test back door ------------------------
   friend struct CampaignAccess;
+  friend class SaveCodec;
 
 private:
   CommandResult applyDispatch(const Recruit& r) { return applyRecruit(r); }
