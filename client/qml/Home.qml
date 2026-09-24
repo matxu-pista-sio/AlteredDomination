@@ -15,6 +15,7 @@ FocusScope {
 
     signal newGame()
     signal loadGame()
+    signal online()
     signal codex()
     signal settings()
     signal gallery()
@@ -147,6 +148,17 @@ FocusScope {
             ToolTip.text: "No saved campaigns yet"
             onClicked: home.loadGame()
             KeyNavigation.up: newGameButton
+            KeyNavigation.down: onlineButton
+        }
+        Button {
+            id: onlineButton
+            width: 260
+            height: 40
+            text: "Online"
+            onClicked: home.online()
+            ToolTip.visible: hovered
+            ToolTip.text: "Ranked campaigns against another commander"
+            KeyNavigation.up: loadButton
             KeyNavigation.down: codexButton
         }
         Button {
@@ -155,7 +167,7 @@ FocusScope {
             height: 40
             text: "Codex"
             onClicked: home.codex()
-            KeyNavigation.up: loadButton
+            KeyNavigation.up: onlineButton
             KeyNavigation.down: settingsButton
         }
         Button {

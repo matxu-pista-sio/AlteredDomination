@@ -4,7 +4,7 @@
 # (docs/ARCHITECTURE.md, "C++ <-> QML bridge"). The rules live in ad::core.
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS
-  Core Gui GuiPrivate Qml Quick QuickControls2 Svg Multimedia Concurrent ShaderTools)
+  Core Gui GuiPrivate Qml Quick QuickControls2 Svg Multimedia Concurrent ShaderTools WebSockets)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -109,6 +109,8 @@ set(AD_PAGES
   NewGame.qml
   LoadGame.qml
   SettingsView.qml
+  Lobby.qml
+  CountryPicker.qml
   Codex.qml
   Gallery.qml
   Ocean.qml
@@ -154,6 +156,8 @@ qt_add_qml_module(altereddomination
     src/catalogmodel.cpp
     src/savestore.h
     src/savestore.cpp
+    src/net/lobbyclient.h
+    src/net/lobbyclient.cpp
 )
 
 # Bundled data: the generated world, the unit catalog and icons, the
@@ -189,6 +193,7 @@ qt_add_resources(altereddomination "ad_audio"
 # the generated registrations translation unit, so src/ must be on the path.
 target_include_directories(altereddomination PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/net
 )
 
 target_link_libraries(altereddomination PRIVATE
@@ -204,6 +209,7 @@ target_link_libraries(altereddomination PRIVATE
   Qt6::Svg
   Qt6::Multimedia
   Qt6::Concurrent
+  Qt6::WebSockets
   # devdrive injects input through the QPA interface (qpa/qwindowsysteminterface.h)
   Qt6::GuiPrivate
 )

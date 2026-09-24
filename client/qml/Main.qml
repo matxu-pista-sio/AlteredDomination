@@ -22,8 +22,9 @@ ApplicationWindow {
     font.family: Style.bodyFamily
     font.pixelSize: Style.fontBody
 
-    // for the headless driver's `eval` (devdrive.h): the controller by name
+    // for the headless driver's `eval` (devdrive.h): the controllers by name
     readonly property QtObject game: GameController
+    readonly property QtObject net: LobbyClient
 
     Settings {
         id: windowSettings
@@ -58,6 +59,7 @@ ApplicationWindow {
         case "newgame": toHome(); stack.push(newGamePage); return true
         case "load": toHome(); stack.push(loadPage); return true
         case "settings": toHome(); stack.push(settingsPage); return true
+        case "lobby": toHome(); stack.push(lobbyPage); return true
         case "codex": toHome(); stack.push(codexPage); return true
         case "gallery": toHome(); stack.push(galleryPage); return true
         case "campaign":
@@ -94,6 +96,7 @@ ApplicationWindow {
         Home {
             onNewGame: root.open(newGamePage)
             onLoadGame: root.open(loadPage)
+            onOnline: root.open(lobbyPage)
             onCodex: root.open(codexPage)
             onSettings: root.open(settingsPage)
             onGallery: root.open(galleryPage)
@@ -115,6 +118,7 @@ ApplicationWindow {
         }
     }
     Component { id: settingsPage; SettingsView { onBack: root.back() } }
+    Component { id: lobbyPage; Lobby { onBack: root.back() } }
     Component {
         id: campaignPage
         Campaign {
@@ -133,6 +137,11 @@ ApplicationWindow {
         function onBattleRequested() {
             stack.push(battlePage)
             Audio.music("battle")
+        }
+        // the server started (or rebuilt, after a reconnect) the shared campaign
+        function onOnlineCampaignStarted(resumed) {
+            root.startCampaign()
+            if (resumed) GameController.notice("Reconnected: the campaign was rebuilt from the match log", "good")
         }
     }
     Component { id: codexPage; Codex { onBack: root.back() } }

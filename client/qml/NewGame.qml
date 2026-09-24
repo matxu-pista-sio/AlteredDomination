@@ -17,18 +17,8 @@ FocusScope {
     signal started()
 
     property string selectedKey: gameSettings.lastCountry
-    property var countries: GameController.allCountries()
-    property string continent: "All"
-    readonly property var filtered: {
-        const needle = search.text.trim().toLowerCase()
-        return countries.filter(c => (continent === "All" || c.continent === continent)
-                                  && (needle === "" || c.name.toLowerCase().indexOf(needle) >= 0
-                                      || c.capitalName.toLowerCase().indexOf(needle) >= 0))
-    }
-    readonly property var selected: {
-        for (const c of countries) if (c.key === selectedKey) return c
-        return null
-    }
+    readonly property var countries: picker.countries
+    readonly property var selected: picker.selected
 
     Settings {
         id: gameSettings
@@ -40,7 +30,7 @@ FocusScope {
 
     focus: true
     Keys.onEscapePressed: page.back()
-    Component.onCompleted: search.forceActiveFocus()
+    Component.onCompleted: picker.focusSearch()
 
     function fmtBig(n) {
         if (n >= 1e12) return (n / 1e12).toFixed(2) + " T"
@@ -80,115 +70,12 @@ FocusScope {
                 Layout.fillHeight: true
                 padding: 12
 
-                ColumnLayout {
+                CountryPicker {
+                    id: picker
                     anchors.fill: parent
-                    spacing: 10
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-                        TextField {
-                            id: search
-                            Layout.fillWidth: true
-                            focus: true
-                            placeholderText: "Search a country or a capital…"
-                            Keys.onReturnPressed: if (page.filtered.length > 0) page.selectedKey = page.filtered[0].key
-                        }
-                        Button {
-                            text: "Random"
-                            ToolTip.visible: hovered
-                            ToolTip.text: "Let fate pick"
-                            onClicked: page.selectedKey = GameController.randomCountryKey()
-                        }
-                    }
-
-                    TabBar {
-                        id: continents
-                        Layout.fillWidth: true
-                        background: Item {}
-                        Repeater {
-                            model: ["All", "Europe", "Asia", "Africa", "North America", "South America", "Oceania"]
-                            TabButton {
-                                required property string modelData
-                                text: modelData
-                                width: implicitWidth
-                                onClicked: page.continent = modelData
-                            }
-                        }
-                    }
-
-                    GridView {
-                        id: grid
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        cellWidth: Math.floor(width / Math.max(1, Math.floor(width / 176)))
-                        cellHeight: 112
-                        model: page.filtered
-                        boundsBehavior: Flickable.StopAtBounds
-                        ScrollBar.vertical: ScrollBar {}
-
-                        delegate: Item {
-                            id: card
-                            required property var modelData
-                            width: grid.cellWidth
-                            height: grid.cellHeight
-                            readonly property bool current: modelData.key === page.selectedKey
-
-                            Rectangle {
-                                anchors.fill: parent
-                                anchors.margins: 4
-                                radius: Style.radius
-                                color: card.current ? Qt.alpha(Style.brass, 0.2)
-                                     : cardHover.hovered ? Style.slateLight : Style.slate
-                                border.width: card.current ? 2 : 1
-                                border.color: card.current ? Style.brassBright
-                                            : cardHover.hovered ? Style.brass : Style.brassDark
-                                Behavior on color { ColorAnimation { duration: 90 } }
-
-                                Column {
-                                    anchors.centerIn: parent
-                                    spacing: 5
-                                    Flag {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: 60
-                                        height: 45
-                                        source: card.modelData.flag
-                                    }
-                                    Text {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: card.width - 22
-                                        text: card.modelData.name
-                                        font.family: Style.displayFamily
-                                        font.pixelSize: Style.fontBody + 1
-                                        font.bold: true
-                                        color: Style.onSlate
-                                        elide: Text.ElideRight
-                                        horizontalAlignment: Text.AlignHCenter
-                                    }
-                                    Text {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: card.modelData.income + " / round  ·  " + card.modelData.cities
-                                              + (card.modelData.cities === 1 ? " city" : " cities")
-                                        font.pixelSize: Style.fontSmall
-                                        color: Style.onSlateFaint
-                                    }
-                                }
-                                HoverHandler { id: cardHover }
-                                TapHandler {
-                                    onTapped: page.selectedKey = card.modelData.key
-                                    onDoubleTapped: { page.selectedKey = card.modelData.key; page.start() }
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        visible: page.filtered.length === 0
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "No country matches"
-                        color: Style.onSlateFaint
-                    }
+                    selectedKey: page.selectedKey
+                    onSelectedKeyChanged: page.selectedKey = selectedKey
+                    onAccepted: page.start()
                 }
             }
         }
