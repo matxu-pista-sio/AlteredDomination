@@ -65,7 +65,9 @@ between; the tests run it to completion with the tactical AI on both sides.
 ## C++ ↔ QML bridge (client)
 
 Performance rule: models are updated by **deltas** from core events, never
-rebuilt per action.
+rebuilt per action. During the AI round the deltas are batched: cities
+touched in a time slice are refreshed once when the slice ends, the link
+paths are rebuilt at most once per slice, the ranking once per slice.
 
 - `GameController` (QML singleton): owns the `Campaign`, starts/loads/saves
   games, exposes `Q_INVOKABLE recruit/moveUnits/attack/endTurn` and the
@@ -77,7 +79,10 @@ rebuilt per action.
   x, y, tier, isCapital, ownerKey, ownerColor, originalKey, unitCount,
   power, territoryPath (SVG path string), selected/highlight flags,
   reachable-from-selection flags (move / attack targets).
-- `LinkModel`: one row per link (x1, y1, x2, y2, sea, hostile).
+- `LinkModel`: one row per drawn link segment (x1, y1, x2, y2, sea, wrap,
+  hostile, active; an antimeridian link has two rows) plus the links as
+  SVG path strings per kind (`landPath`, `seaPath`, `hostilePath`,
+  `activePath`), so the map draws each kind with one `Shape`.
 - `CountryModel` (ranking): key, name, color, flag, income, funds, cities,
   share, eliminated, isHuman.
 - `CityUnitsModel`: the selected city's units grouped by type.
@@ -91,8 +96,10 @@ rebuilt per action.
   blocks, and every AI action is animated before the next is asked for.
 - `SaveStore`: slots + metadata list model in `AppDataLocation`.
 - `Style` (singleton, UI_THEME.md), `Audio` (singleton: `SoundEffect` pool +
-  `MediaPlayer` music), `DevDrive` (headless screenshot/driver, see the
-  share-screenshot skill).
+  `MediaPlayer` music), `DevDrive` (headless screenshot/driver armed by
+  `AD_DRIVE=1`; input goes in through `QWindowSystemInterface`, the door
+  real mice and keyboards use, so popups and flickables see it; see the
+  share-screenshot skill and `scripts/ad.py`).
 
 ## Threading
 

@@ -1,6 +1,8 @@
 # Altered Domination — modernization audit and plan
 
-Status: **plan of record**. This document is the audit of the 2018 code base
+Status: **executed** — milestones M0–M8 (issues 01–19) are done on branch
+`claude/dreamy-volta-pvb4kh`; each ticket under `docs/issues/` carries its
+done-record. Open: the owner items 20–22. Originally: **plan of record**. This document is the audit of the 2018 code base
 (qmake, Qt 5.x, QGraphicsView + QtWidgets + six floating `QQuickView` windows)
 and the plan that turns it into a 2026 desktop game built the way
 [TopGen](https://github.com/matxu-pista-sio/TopGen) is built: a deterministic,

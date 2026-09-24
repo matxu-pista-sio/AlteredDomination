@@ -289,9 +289,10 @@ never time-limited, for the same reason.
 - Saves live in `QStandardPaths::AppDataLocation/saves/<slot>.json` with a
   sidecar of metadata (country, round, date, income share) for the list.
   `autosave` is a slot like any other, written at the end of every round.
-- A battle in progress is never saved: quitting mid-battle forfeits it
-  (attacker retreats, no losses beyond the board), which is what the
-  "quit battle" confirmation says.
+- A battle in progress is never saved. Quitting a battle before Play
+  (during Deploy or Promote) withdraws the attackers with no losses;
+  quitting during Play concedes it as it stands — a surrender by the
+  quitting side — which is what the "quit battle" confirmation says.
 
 ## 11. Constants
 

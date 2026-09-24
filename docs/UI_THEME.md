@@ -92,6 +92,11 @@ Ocean (ShaderEffect, fills the viewport)
   red, with the link between them drawn solid.
 - Everything is data-driven from `WorldModel`; nothing in QML knows a
   country name.
+- Input: one `TapHandler` on the viewport hit-tests the canvas
+  (`childAt`): markers answer through a circular containment mask, then
+  territories through `FillContains`; the border and link layers are
+  disabled so they never answer. Every `Panel`/`GlassPanel` carries a
+  `MouseArea`, so nothing under a panel is ever hit.
 
 ## The battle screen
 

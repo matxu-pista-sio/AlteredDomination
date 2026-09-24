@@ -28,8 +28,9 @@ plan that produced this tree are in
 ## Building
 
 Requirements: CMake ≥ 3.27, Ninja, a C++23 compiler (GCC 13+, Clang 17+,
-MSVC 19.38+). Qt 6.8+ (Quick, QuickControls2, Svg, Multimedia, ShaderTools)
-is needed only for the client — the core and its tests build without Qt.
+MSVC 19.38+). Qt 6.8+ (Quick, QuickControls2, Shapes, VectorImage, Effects,
+Particles, Svg, Multimedia, Concurrent, ShaderTools) is needed only for the
+client — the core and its tests build without Qt.
 Dependencies (nlohmann_json, doctest) are fetched automatically via CPM on
 first configure.
 
@@ -59,6 +60,46 @@ board. Win by holding 60 % of the world's income.
 The full rules are in [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md); the in-game
 Codex repeats them with the unit patterns.
 
+![The chart](docs/screenshots/campaign-capital.png)
+![The board](docs/screenshots/battle-strike.png)
+
+More in [docs/screenshots/](docs/screenshots/): the home chart, the
+country picker, the codex, the control gallery, the three themes, the
+city sheet, the force picker, the AI round, the battle phases.
+
+### Controls
+
+| Map | | Board | |
+|---|---|---|---|
+| `E` | end the turn | `Enter` | ready, then end the turn |
+| `F` | find a city | `D` | offer a draw |
+| `Tab` | next city with units to spend | arrows, `Space` | cursor, act |
+| `R` `M` `A` | recruit / move / attack from the selected city | right click | a unit's card |
+| arrows, `+` `−` `0` `Home` | pan, zoom, fit, your capital | `Esc` | clear, then quit |
+| `Esc` | close the sheet, then the menu | `F11` | full screen |
+| `Ctrl+S` | quick save | | |
+
+Saves live in the platform's application-data folder (`AlteredDomination/saves`);
+`autosave` is written at the end of every round. Settings (theme, sound,
+effects, the last country played) persist between runs; `AD_THEME=<key>`
+pins a theme for one run.
+
+## Developer tooling
+
+The client can be driven headless — no window manager, no GPU:
+
+```bash
+python3 scripts/ad.py screenshot home            # -> shots/home.png
+python3 scripts/ad.py screenshot battle --then "key Return" "wait 1500"
+python3 scripts/ad.py drive "page campaign-fr" "key E" "wait 3000" "eval game.round"
+```
+
+`AD_DRIVE=1` arms the stdin driver (`client/src/devdrive.cpp`); the skills
+under `.claude/skills/` describe the workflow (`share-screenshot`,
+`create-ticket`). `scripts/convert_audio.sh` re-encodes the sound effects;
+`scripts/gen_world_data.py` regenerates the world (see
+[docs/DATA_PIPELINE.md](docs/DATA_PIPELINE.md)).
+
 ## Testing
 
 Every rule in the design docs has doctest coverage:
@@ -68,8 +109,8 @@ ctest --preset core-debug --output-on-failure
 ./build/core-debug/core/tests/ad-core-tests -tc='battle*'
 ```
 
-CI runs the suite (plus ASan/UBSan, the data checks and a Qt compile job)
-on every push.
+CI runs the suite (plus ASan/UBSan, the data checks, a Qt build with
+`qmllint`, and a headless screenshot of the client) on every push.
 
 ## License & attribution
 
