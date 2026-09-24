@@ -25,6 +25,11 @@ Popup {
 
     contentItem: Column {
         spacing: 14
+        Shortcut {
+            sequences: ["Return", "Enter"]
+            enabled: dialog.opened
+            onActivated: { dialog.accepted(); dialog.close() }
+        }
         Text {
             width: parent.width
             text: dialog.title

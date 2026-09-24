@@ -16,6 +16,13 @@ Rectangle {
     border.width: 1
     border.color: Style.brassDark
 
+    // A panel is solid: pointer events never fall through to the map beneath.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.AllButtons
+        onWheel: (wheel) => { wheel.accepted = true }
+    }
+
     Rectangle {
         id: header
         visible: panel.title !== ""

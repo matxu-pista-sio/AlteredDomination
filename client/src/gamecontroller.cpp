@@ -21,7 +21,7 @@ using namespace ad::core;
 
 namespace {
 
-constexpr int kAiSliceMs = 8;  // stepping per event-loop tick, so the UI keeps animating
+constexpr int kAiSliceMs = 24;  // stepping per event-loop tick; the UI still repaints between slices
 
 QString sv(std::string_view s) { return QString::fromUtf8(s.data(), static_cast<int>(s.size())); }
 
@@ -501,6 +501,26 @@ QVariantList GameController::attackTargets(int cityId) const {
                               {"flag", flagUrl(o)},
                               {"capital", c.capital},
                               {"income", campaign_->cityIncome(n)}});
+  }
+  return out;
+}
+
+QVariantList GameController::attackSources(int cityId) const {
+  QVariantList out;
+  if (!campaign_ || cityId < 0 || me() < 0 || campaign_->owner(cityId) == me()) return out;
+  for (const CityId n : world_->neighbours(cityId)) {
+    if (campaign_->owner(n) != me()) continue;
+    int unacted = 0, power = 0;
+    for (const UnitId id : campaign_->unitsIn(n))
+      if (const Unit* u = campaign_->unit(id); u && !u->acted) {
+        ++unacted;
+        power += catalog_->type(u->type).cost;
+      }
+    if (unacted == 0) continue;
+    out.push_back(QVariantMap{{"id", n},
+                              {"name", QString::fromStdString(world_->city(n).name)},
+                              {"unacted", unacted},
+                              {"power", power}});
   }
   return out;
 }

@@ -154,6 +154,8 @@ public:
   Q_INVOKABLE QVariantList unitsOf(int cityId) const;
   Q_INVOKABLE QVariantList moveTargets(int cityId) const;
   Q_INVOKABLE QVariantList attackTargets(int cityId) const;
+  /// The human's cities linked to `cityId` that still have unacted units.
+  Q_INVOKABLE QVariantList attackSources(int cityId) const;
   Q_INVOKABLE QString recruit(int cityId, const QString& typeKey, int count);
   Q_INVOKABLE QString moveUnits(int from, int to, const QVariantList& unitIds);
   Q_INVOKABLE QString attack(int from, int to, const QVariantList& unitIds);

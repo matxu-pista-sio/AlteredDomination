@@ -49,6 +49,9 @@ public:
   /// Every unit id in the city that has not acted, ascending.
   Q_INVOKABLE QVariantList unactedIds() const;
   Q_INVOKABLE QVariantList allIds() const;
+  /// The groups as plain maps (typeKey, name, cost, icon, count, unacted,
+  /// unactedIds), for the force picker's arithmetic.
+  Q_INVOKABLE QVariantList groups() const;
 
   [[nodiscard]] int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   [[nodiscard]] QVariant data(const QModelIndex& index, int role) const override;

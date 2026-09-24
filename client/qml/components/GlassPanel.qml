@@ -15,6 +15,13 @@ Item {
     readonly property int headerHeight: title !== "" ? 30 : 0
     default property alias content: body.data
 
+    // Glass is solid too: nothing falls through to the map beneath.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.AllButtons
+        onWheel: (wheel) => { wheel.accepted = true }
+    }
+
     ShaderEffectSource {
         id: source
         anchors.fill: parent

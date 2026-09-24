@@ -65,6 +65,20 @@ QVariantList CityUnitsModel::allIds() const {
   return out;
 }
 
+QVariantList CityUnitsModel::groups() const {
+  QVariantList out;
+  for (int i = 0; i < rowCount(); ++i) {
+    const QModelIndex idx = index(i);
+    out.push_back(QVariantMap{
+        {"typeKey", data(idx, TypeKeyRole)},   {"name", data(idx, NameRole)},
+        {"cost", data(idx, CostRole)},         {"icon", data(idx, IconRole)},
+        {"count", data(idx, CountRole)},       {"unacted", data(idx, UnactedRole)},
+        {"unactedIds", data(idx, UnactedIdsRole)},
+    });
+  }
+  return out;
+}
+
 int CityUnitsModel::rowCount(const QModelIndex& parent) const {
   return parent.isValid() ? 0 : static_cast<int>(groups_.size());
 }
