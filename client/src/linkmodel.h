@@ -19,6 +19,12 @@ class LinkModel : public QAbstractListModel {
   Q_OBJECT
   QML_ELEMENT
   QML_UNCREATABLE("Owned by GameController")
+  /// The links as SVG path strings, one per drawing style, so the map
+  /// draws every link of a kind with one Shape.
+  Q_PROPERTY(QString landPath READ landPath NOTIFY pathsChanged)
+  Q_PROPERTY(QString seaPath READ seaPath NOTIFY pathsChanged)
+  Q_PROPERTY(QString hostilePath READ hostilePath NOTIFY pathsChanged)
+  Q_PROPERTY(QString activePath READ activePath NOTIFY activePathChanged)
 
 public:
   enum Roles {
@@ -42,11 +48,23 @@ public:
   void refreshAll();
   void setActive(int selected, const std::vector<int>& targets);
 
+  [[nodiscard]] QString landPath() const { return landPath_; }
+  [[nodiscard]] QString seaPath() const { return seaPath_; }
+  [[nodiscard]] QString hostilePath() const { return hostilePath_; }
+  [[nodiscard]] QString activePath() const { return activePath_; }
+
   [[nodiscard]] int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   [[nodiscard]] QVariant data(const QModelIndex& index, int role) const override;
   [[nodiscard]] QHash<int, QByteArray> roleNames() const override;
 
+signals:
+  void pathsChanged();
+  void activePathChanged();
+
 private:
+  void rebuildPaths();
+  void rebuildActivePath();
+
   struct Row {
     int a{}, b{};
     double x1{}, y1{}, x2{}, y2{};
@@ -61,6 +79,7 @@ private:
   std::vector<Row> rows_;
   std::vector<std::vector<int>> byCity_;  // row indices touching a city
   std::vector<int> activeRows_;
+  QString landPath_, seaPath_, hostilePath_, activePath_;
 };
 
 } // namespace ad::client

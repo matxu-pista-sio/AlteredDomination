@@ -48,14 +48,15 @@ void main()
     vec3 col = mix(u.deep.rgb, u.shallow.rgb, depth * 0.75);
 
     if (u.waves > 0.5) {
-        float t = u.time * 0.06;
-        float n1 = vnoise(m * 0.012 + vec2(t, -t * 0.7));
-        float n2 = vnoise(m * 0.031 - vec2(t * 1.3, t * 0.4));
-        float swell = (n1 - 0.5) * 0.10 + (n2 - 0.5) * 0.05;
+        float t = u.time * 0.05;
+        float n1 = vnoise(m * 0.022 + vec2(t, -t * 0.7));
+        float n2 = vnoise(m * 0.067 - vec2(t * 1.3, t * 0.4));
+        float n3 = vnoise(m * 0.19 + vec2(-t * 0.8, t * 1.1));
+        float swell = (n1 - 0.5) * 0.045 + (n2 - 0.5) * 0.028 + (n3 - 0.5) * 0.014;
         col += swell;
         // scattered glints where two crests meet
-        float glint = smoothstep(0.78, 0.92, n1 * n2 * 2.2);
-        col += glint * 0.06;
+        float glint = smoothstep(0.80, 0.93, n1 * n2 * 2.2);
+        col += glint * 0.04;
     }
 
     // graticule: 15 degrees of longitude = 4096/24 map units; latitude lines

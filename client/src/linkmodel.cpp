@@ -1,8 +1,17 @@
 #include "linkmodel.h"
 
+#include <QTextStream>
+
 #include <algorithm>
 
 namespace ad::client {
+
+namespace {
+void appendSegment(QString& out, double x1, double y1, double x2, double y2) {
+  out += QStringLiteral("M%1 %2L%3 %4 ")
+             .arg(x1, 0, 'f', 1).arg(y1, 0, 'f', 1).arg(x2, 0, 'f', 1).arg(y2, 0, 'f', 1);
+}
+} // namespace
 
 using namespace ad::core;
 
@@ -47,6 +56,31 @@ void LinkModel::setWorld(const World* world) {
     }
   }
   endResetModel();
+  rebuildPaths();
+  rebuildActivePath();
+}
+
+void LinkModel::rebuildPaths() {
+  QString land, sea, hostile;
+  land.reserve(static_cast<qsizetype>(rows_.size()) * 28);
+  for (const Row& r : rows_) {
+    QString& target = r.hostile ? hostile : r.sea ? sea : land;
+    appendSegment(target, r.x1, r.y1, r.x2, r.y2);
+  }
+  landPath_ = land;
+  seaPath_ = sea;
+  hostilePath_ = hostile;
+  emit pathsChanged();
+}
+
+void LinkModel::rebuildActivePath() {
+  QString active;
+  for (const int row : activeRows_) {
+    const Row& r = rows_[static_cast<std::size_t>(row)];
+    appendSegment(active, r.x1, r.y1, r.x2, r.y2);
+  }
+  activePath_ = active;
+  emit activePathChanged();
 }
 
 bool LinkModel::computeHostile(const Row& r) const {
@@ -61,18 +95,22 @@ void LinkModel::setCampaign(const Campaign* campaign) {
 
 void LinkModel::refreshCity(int id) {
   if (id < 0 || id >= static_cast<int>(byCity_.size())) return;
+  bool changed = false;
   for (const int row : byCity_[static_cast<std::size_t>(id)]) {
     Row& r = rows_[static_cast<std::size_t>(row)];
     const bool h = computeHostile(r);
     if (h == r.hostile) continue;
     r.hostile = h;
+    changed = true;
     emit dataChanged(index(row), index(row), {HostileRole});
   }
+  if (changed) rebuildPaths();
 }
 
 void LinkModel::refreshAll() {
   for (Row& r : rows_) r.hostile = computeHostile(r);
   if (!rows_.empty()) emit dataChanged(index(0), index(rowCount() - 1), {HostileRole});
+  rebuildPaths();
 }
 
 void LinkModel::setActive(int selected, const std::vector<int>& targets) {
@@ -81,7 +119,10 @@ void LinkModel::setActive(int selected, const std::vector<int>& targets) {
     emit dataChanged(index(row), index(row), {ActiveRole});
   }
   activeRows_.clear();
-  if (selected < 0 || selected >= static_cast<int>(byCity_.size())) return;
+  if (selected < 0 || selected >= static_cast<int>(byCity_.size())) {
+    rebuildActivePath();
+    return;
+  }
   for (const int row : byCity_[static_cast<std::size_t>(selected)]) {
     Row& r = rows_[static_cast<std::size_t>(row)];
     const int otherEnd = r.a == selected ? r.b : r.a;
@@ -90,6 +131,7 @@ void LinkModel::setActive(int selected, const std::vector<int>& targets) {
     activeRows_.push_back(row);
     emit dataChanged(index(row), index(row), {ActiveRole});
   }
+  rebuildActivePath();
 }
 
 int LinkModel::rowCount(const QModelIndex& parent) const {
