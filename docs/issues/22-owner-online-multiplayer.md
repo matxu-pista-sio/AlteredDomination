@@ -24,7 +24,7 @@ Online play is built on TopGen's model - a headless Qt WebSocket server with acc
 - CI builds the server and runs its suite.
 
 ## Done
-- Commits: `30db138` PROTOCOL.md · `369a762` codec · `8ecd865` + `6e8c882` server · the client commits of #25/#26/#27.
+- Commits: `30db138` PROTOCOL.md · `369a762` codec · `8ecd865` + `6e8c882` server · `5a0ada1` lobby · `79a114e` lockstep session · `d9caab4` net_test.py + CI · `46ba732` docs.
 - `scripts/net_test.py` passes end to end; screenshots in `docs/screenshots/net-*.png`.
 - GAME_DESIGN.md §12, ARCHITECTURE.md "Online topology", UI_THEME.md "The lobby", server/README.md.
 

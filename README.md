@@ -63,7 +63,8 @@ Codex repeats them with the unit patterns.
 ![The chart](docs/screenshots/campaign-capital.png)
 ![The board — you always hold the bottom edge](docs/screenshots/battle-strike.png)
 
-More in [docs/screenshots/](docs/screenshots/): the home chart, the
+More in [docs/screenshots/](docs/screenshots/): the home chart, the online
+lobby and a verdict, the
 country picker, the codex, the control gallery, the three themes, the
 city sheet, the force picker, the AI round, the battle phases.
 

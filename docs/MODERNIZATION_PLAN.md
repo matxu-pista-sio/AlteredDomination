@@ -2,7 +2,7 @@
 
 Status: **executed** — milestones M0–M8 (issues 01–19) are done on branch
 `claude/dreamy-volta-pvb4kh`; each ticket under `docs/issues/` carries its
-done-record. Open: the owner items 20–22. Originally: **plan of record**. This document is the audit of the 2018 code base
+done-record, and online play landed as tickets 22–27. Open: the owner items 20, 21 and 28. Originally: **plan of record**. This document is the audit of the 2018 code base
 (qmake, Qt 5.x, QGraphicsView + QtWidgets + six floating `QQuickView` windows)
 and the plan that turns it into a 2026 desktop game built the way
 [TopGen](https://github.com/matxu-pista-sio/TopGen) is built: a deterministic,
@@ -140,12 +140,13 @@ on, and each commit references its number as `#N area: subject`.
 | M6 Map | 14, 15 | World map view, campaign HUD |
 | M7 Battle | 16 | Battle screen |
 | M8 Polish | 17, 18, 19 | Audio, saves UI, keyboard/tooltips/headless driver |
-| Owner | 20, 21, 22 | License, asset provenance, online multiplayer decision |
+| Owner | 20, 21, 28 | License, asset provenance, hosting the online server |
 
 ## 5. Out of scope for this pass
 
-- Online multiplayer and a matchmaking server (the legacy TCP code is
-  removed; a hotseat mode replaces it for two humans on one machine). An
-  epic issue records the decision the owner has to make.
+- ~~Online multiplayer and a matchmaking server~~ - landed after this
+  pass as tickets 22-27 (docs/PROTOCOL.md: peer lockstep over `ad-server`);
+  the legacy TCP code stays removed, hotseat stays for two humans on one
+  machine, and hosting the server is the owner's ticket 28.
 - Android / WebAssembly builds — the owner asked for desktop only.
 - Diplomacy, fog of war, supply lines — listed as future design issues.

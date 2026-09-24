@@ -41,7 +41,7 @@ type <text>              text into the focused field
 size <w> <h>             window size
 activate                 give the window keyboard focus (Xvfb has no WM)
 page <name>              jump to a page (Main.qml devPage)
-eval <js>                evaluate in the window scope; `game` is GameController
+eval <js>                evaluate in the window scope; `game` is GameController, `net` is LobbyClient
 wait <ms>                answer after a delay (animations settle)
 quit
 ```
