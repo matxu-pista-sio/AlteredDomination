@@ -8,7 +8,7 @@ Qt-free C++23 **core** with doctest coverage, a **pure QML** Qt 6 client over
 a thin C++ bridge, generated data and assets, CMake presets, CI, and design
 docs that are normative for the code.
 
-Every item below became a GitHub issue; the issue numbers are listed in §4.
+Every item below is a ticket in [docs/issues/](issues/README.md) (§4 explains why they are not on GitHub yet).
 The plan is executed issue by issue on the `claude/dreamy-volta-pvb4kh`
 branch; each commit references its issue (`#N core: ...`).
 
@@ -122,21 +122,23 @@ Headline technical choices:
 Order is dependency order; every milestone ends with green tests and, for
 client work, a screenshot in the issue.
 
+GitHub Issues are disabled on the repository (only the owner can enable
+them), so the tickets are kept filing-ready in [docs/issues/](issues/README.md)
+with the numbers below; they are filed verbatim the day Issues are switched
+on, and each commit references its number as `#N area: subject`.
+
 | Milestone | Issues | Delivers |
 |---|---|---|
-| M0 Skeleton | #1 | CMake + presets + CPM, `core/` + doctest, `client/` stub, CI, docs, CLAUDE.md, legacy tree removed |
-| M1 Data | #2, #3, #4 | `scripts/gen_world_data.py`, `assets/world/*.json`, flags, unit icons |
-| M2 Core campaign | #5, #6, #7 | World model, campaign rules, save/load |
-| M3 Core battle | #8 | Board battle engine |
-| M4 AI | #9, #10, #11 | Strategic AI, tactical AI, auto-resolve |
-| M5 Client shell | #12, #13 | Theme + controls, Home/New game/Load/Settings/Codex, bridge |
-| M6 Map | #14, #15 | World map view, campaign HUD |
-| M7 Battle | #16 | Battle screen |
-| M8 Polish | #17, #18, #19 | Audio, animations/effects, saves UI, keyboard |
-| Owner | #20, #21, #22 | License, asset provenance, online multiplayer decision |
-
-(Issue numbers are filled in by the filing commit; see the repository's
-issue tracker for the live list.)
+| M0 Skeleton | 01 | CMake + presets + CPM, `core/` + doctest, `client/` stub, CI, docs, CLAUDE.md, legacy tree removed |
+| M1 Data | 02, 03, 04 | `scripts/gen_world_data.py`, `assets/world/*.json`, flags, unit icons |
+| M2 Core campaign | 05, 06, 07 | World model, campaign rules, save/load |
+| M3 Core battle | 08 | Board battle engine |
+| M4 AI | 09, 10, 11 | Strategic AI, tactical AI, auto-resolve |
+| M5 Client shell | 12, 13 | Theme + controls, Home/New game/Load/Settings/Codex, bridge |
+| M6 Map | 14, 15 | World map view, campaign HUD |
+| M7 Battle | 16 | Battle screen |
+| M8 Polish | 17, 18, 19 | Audio, saves UI, keyboard/tooltips/headless driver |
+| Owner | 20, 21, 22 | License, asset provenance, online multiplayer decision |
 
 ## 5. Out of scope for this pass
 
