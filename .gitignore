@@ -36,3 +36,5 @@ __pycache__/
 
 # Screenshots and scratch renders never belong in the tree
 *.png.tmp
+# headless screenshots (scripts/ad.py)
+shots/

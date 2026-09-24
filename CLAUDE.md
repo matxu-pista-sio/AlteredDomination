@@ -46,7 +46,9 @@ green (CI runs them).
 - QML never mutates game state: every action is a `GameController` /
   `BattleController` invokable that goes through `core`.
 - Client changes are verified by running the real app headless and
-  screenshotting it — see `.claude/skills/share-screenshot/`.
+  screenshotting it — `python3 scripts/ad.py screenshot <page>` (Xvfb +
+  Mesa, `AD_DRIVE=1`); see `.claude/skills/share-screenshot/`. `all_qmllint`
+  must stay clean.
 
 ## Build with the conda Qt used for development
 
