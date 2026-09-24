@@ -22,6 +22,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(AD_BUILD_TESTS  "Build unit tests (doctest)" ON)
 option(AD_BUILD_CLIENT "Build the Qt Quick client (requires Qt 6.8+)" ON)
 option(AD_REQUIRE_QT   "Fail configure when the client is enabled but Qt is missing" OFF)
+option(AD_BUILD_SERVER "Build the headless online server (Qt Core, WebSockets, Sql)" ON)
 
 include(get_cpm)
 include(Dependencies)
@@ -48,4 +49,22 @@ endif()
 
 if(AD_BUILD_CLIENT)
   add_subdirectory(client)
+endif()
+
+# The online server (docs/PROTOCOL.md) needs only the non-GUI Qt modules,
+# so a VPS build can leave the client off. Skipped, like the client, when
+# the modules are not there.
+if(AD_BUILD_SERVER)
+  find_package(Qt6 6.8 QUIET COMPONENTS Core WebSockets Sql)
+  if(NOT Qt6_FOUND OR NOT TARGET Qt6::WebSockets OR NOT TARGET Qt6::Sql)
+    if(AD_REQUIRE_QT)
+      message(FATAL_ERROR "Qt 6.8+ with WebSockets and Sql not found but AD_REQUIRE_QT=ON")
+    endif()
+    message(WARNING "Qt WebSockets/Sql not found - skipping the server target.")
+    set(AD_BUILD_SERVER OFF)
+  endif()
+endif()
+
+if(AD_BUILD_SERVER)
+  add_subdirectory(server)
 endif()

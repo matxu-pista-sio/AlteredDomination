@@ -19,6 +19,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "AD_BUILD_CLIENT": "OFF",
+        "AD_BUILD_SERVER": "OFF",
         "AD_BUILD_TESTS": "ON"
       }
     },
@@ -54,6 +55,16 @@
         "CMAKE_BUILD_TYPE": "Release",
         "AD_BUILD_TESTS": "OFF"
       }
+    },
+    {
+      "name": "server-release",
+      "displayName": "Server only (Release, Qt Core/WebSockets/Sql, no client)",
+      "inherits": "desktop-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "AD_BUILD_CLIENT": "OFF",
+        "AD_BUILD_TESTS": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -61,7 +72,8 @@
     { "name": "core-release",    "configurePreset": "core-release" },
     { "name": "core-asan",       "configurePreset": "core-asan" },
     { "name": "desktop-debug",   "configurePreset": "desktop-debug" },
-    { "name": "desktop-release", "configurePreset": "desktop-release" }
+    { "name": "desktop-release", "configurePreset": "desktop-release" },
+    { "name": "server-release",  "configurePreset": "server-release" }
   ],
   "testPresets": [
     { "name": "core-debug",    "configurePreset": "core-debug",    "output": { "outputOnFailure": true } },
