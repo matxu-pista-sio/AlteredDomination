@@ -269,7 +269,7 @@ def load_places(countries, by_adm):
         if iso is None:
             continue
         places[iso].append({
-            "name": p["name"], "lon": lon, "lat": lat,
+            "name": " ".join(p["name"].split()), "lon": lon, "lat": lat,
             "pop": int(p.get("pop_max") or 0),
             "capital": int(p.get("adm0cap") or 0) == 1,
             "rank": int(p.get("scalerank") or 10),

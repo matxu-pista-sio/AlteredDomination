@@ -12186,7 +12186,7 @@
   {
    "id": 730,
    "key": "ru-st-petersburg",
-   "name": "St.  Petersburg",
+   "name": "St. Petersburg",
    "country": "ru",
    "lon": 30.3141,
    "lat": 59.941,
@@ -14162,7 +14162,7 @@
   {
    "id": 882,
    "key": "us-washington-d-c",
-   "name": "Washington,  D.C.",
+   "name": "Washington, D.C.",
    "country": "us",
    "lon": -77.0114,
    "lat": 38.9015,
@@ -28442,5 +28442,5 @@
    "km": 152
   }
  ],
- "hash": "a7df270656890a34bd6c508ee56d1456139f74022b0ce49ed8417cc8c6a8498c"
+ "hash": "6cbcfbd8289617dc3a562132a41b687d554f4af3a6f9f0d1bf4c03b96625486d"
 }
