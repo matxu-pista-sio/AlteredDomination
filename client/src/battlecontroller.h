@@ -58,6 +58,14 @@ class BattleController : public QObject {
   Q_PROPERTY(QString resultKey READ resultKey NOTIFY stateChanged)
   Q_PROPERTY(QVariantMap result READ result NOTIFY stateChanged)
   Q_PROPERTY(QString status READ status NOTIFY stateChanged)
+  Q_PROPERTY(bool canReady READ canReady NOTIFY stateChanged)
+  // live per-side counts, for the header
+  Q_PROPERTY(int attackerUnits READ attackerUnits NOTIFY stateChanged)
+  Q_PROPERTY(int defenderUnits READ defenderUnits NOTIFY stateChanged)
+  Q_PROPERTY(int attackerGenerals READ attackerGenerals NOTIFY stateChanged)
+  Q_PROPERTY(int defenderGenerals READ defenderGenerals NOTIFY stateChanged)
+  Q_PROPERTY(int attackerPower READ attackerPower NOTIFY stateChanged)
+  Q_PROPERTY(int defenderPower READ defenderPower NOTIFY stateChanged)
 
 public:
   enum Highlight { NoHighlight = 0, MoveTarget = 1, StrikeTarget = 2, Selected = 3 };
@@ -103,6 +111,13 @@ public:
   [[nodiscard]] QVariantMap result() const { return result_; }
   [[nodiscard]] QString status() const;
 
+  [[nodiscard]] int attackerUnits() const { return livingUnits(0); }
+  [[nodiscard]] int defenderUnits() const { return livingUnits(1); }
+  [[nodiscard]] int attackerGenerals() const { return livingGenerals(0); }
+  [[nodiscard]] int defenderGenerals() const { return livingGenerals(1); }
+  [[nodiscard]] int attackerPower() const { return power(0); }
+  [[nodiscard]] int defenderPower() const { return power(1); }
+
   Q_INVOKABLE int generalsRequired(int side) const;
   Q_INVOKABLE int generalsPromoted(int side) const;
   Q_INVOKABLE int livingGenerals(int side) const;
@@ -111,7 +126,7 @@ public:
   Q_INVOKABLE bool isReady(int side) const;
   Q_INVOKABLE bool isHuman(int side) const;
   /// True when the Ready button applies to the view side right now.
-  Q_INVOKABLE bool canReady() const;
+  [[nodiscard]] bool canReady() const;
   Q_INVOKABLE QVariantMap unitAt(int x, int y) const;
   Q_INVOKABLE bool inZone(int side, int x, int y) const;
 
