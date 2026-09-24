@@ -1,41 +1,144 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+import QtCore
+import AD
+import AD.Theme
+import AD.Components
 
-// Placeholder shell: the real pages (Home, New game, Campaign, Battle)
-// arrive with the theme and shell tickets. This window proves the build,
-// the module and the Qt version.
+// The one window (docs/ARCHITECTURE.md): a StackView of pages over the
+// core bridge. Nothing here knows a rule; every page talks to
+// GameController and the pages talk to each other through signals.
 ApplicationWindow {
-    id: window
+    id: root
+
     width: 1280
     height: 800
     minimumWidth: 1024
     minimumHeight: 640
     visible: true
-    title: qsTr("Altered Domination")
-    color: "#1b2230"
+    title: "Altered Domination"
+    color: Style.slate
+    font.family: Style.bodyFamily
+    font.pixelSize: Style.fontBody
 
-    Column {
+    Settings {
+        id: windowSettings
+        category: "window"
+        property alias width: root.width
+        property alias height: root.height
+    }
+
+    // -- navigation ---------------------------------------------------------------
+    function toHome() {
+        stack.clear()
+        stack.push(homePage)
+        Audio.music("menu")
+    }
+    function open(page) { stack.push(page) }
+    function back() { if (stack.depth > 1) stack.pop() }
+
+    // The headless driver's `page <name>` (devdrive.h): jump anywhere.
+    function devPage(name) {
+        switch (name) {
+        case "intro": stack.clear(); stack.push(introPage); return true
+        case "home": toHome(); return true
+        case "newgame": toHome(); stack.push(newGamePage); return true
+        case "load": toHome(); stack.push(loadPage); return true
+        case "settings": toHome(); stack.push(settingsPage); return true
+        case "codex": toHome(); stack.push(codexPage); return true
+        case "gallery": toHome(); stack.push(galleryPage); return true
+        }
+        return false
+    }
+
+    Component { id: introPage; Intro { onDone: root.toHome() } }
+    Component {
+        id: homePage
+        Home {
+            onNewGame: root.open(newGamePage)
+            onLoadGame: root.open(loadPage)
+            onCodex: root.open(codexPage)
+            onSettings: root.open(settingsPage)
+            onGallery: root.open(galleryPage)
+            onQuit: Qt.quit()
+        }
+    }
+    Component {
+        id: newGamePage
+        NewGame {
+            onBack: root.back()
+            onStarted: toasts.show("The campaign page lands with the map work", "info")
+        }
+    }
+    Component {
+        id: loadPage
+        LoadGame {
+            onBack: root.back()
+            onLoaded: toasts.show("The campaign page lands with the map work", "info")
+        }
+    }
+    Component { id: settingsPage; SettingsView { onBack: root.back() } }
+    Component { id: codexPage; Codex { onBack: root.back() } }
+    Component { id: galleryPage; Gallery { onBack: root.back() } }
+
+    StackView {
+        id: stack
+        anchors.fill: parent
+        initialItem: introPage
+        focus: true
+
+        pushEnter: Transition {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale"; from: 1.02; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        }
+        pushExit: Transition {
+            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 160 }
+        }
+        popEnter: Transition {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        }
+        popExit: Transition {
+            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 160 }
+            NumberAnimation { property: "scale"; from: 1; to: 1.02; duration: 160 }
+        }
+        replaceEnter: Transition {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 260 }
+        }
+        replaceExit: Transition {
+            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 200 }
+        }
+    }
+
+    ToastStrip {
+        id: toasts
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: 16
+        z: 100
+    }
+
+    Connections {
+        target: GameController
+        function onNotice(text, kind) { toasts.show(text, kind) }
+    }
+
+    Shortcut {
+        sequence: "F11"
+        onActivated: root.visibility = root.visibility === Window.FullScreen
+                                       ? Window.Windowed : Window.FullScreen
+    }
+
+    // A missing asset is a build problem, not a runtime one - say so loudly.
+    Text {
+        visible: !GameController.worldLoaded
         anchors.centerIn: parent
-        spacing: 12
-
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: qsTr("Altered Domination")
-            color: "#e6e1d6"
-            font.pixelSize: 40
-            font.bold: true
-        }
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: qsTr("v%1 · Qt %2").arg(Qt.application.version).arg(qtVersion())
-            color: "#b3893c"
-            font.pixelSize: 16
-
-            function qtVersion() {
-                // Qt.application has no version of Qt itself; the C++ side
-                // will expose it through Style once the theme lands.
-                return "6"
-            }
-        }
+        z: 200
+        width: parent.width - 80
+        text: "World data failed to load: " + GameController.loadError
+        color: Style.danger
+        font.pixelSize: Style.fontTitle
+        wrapMode: Text.Wrap
+        horizontalAlignment: Text.AlignHCenter
     }
 }
