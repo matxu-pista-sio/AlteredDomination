@@ -127,6 +127,10 @@ public:
   /// Every move and strike of `s`'s unacted units (phase Play, s to act),
   /// plus the End action last. Empty when it is not that side's turn.
   [[nodiscard]] std::vector<BattleAction> legalActions(Side s) const;
+  /// True when `s` has at least one legal move or strike (turn ignored).
+  [[nodiscard]] bool canAct(Side s) const;
+  /// True when a unit of `enemy` could strike `cell` right now (turn ignored).
+  [[nodiscard]] bool threatened(Cell cell, Side enemy) const;
 
   // -- commands -----------------------------------------------------------------
   BattleStatus apply(const BattleCommand& cmd);

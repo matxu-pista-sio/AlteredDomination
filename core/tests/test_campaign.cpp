@@ -11,15 +11,6 @@ using namespace ad::core;
 using ad::test::realCatalog;
 using ad::test::realWorld;
 
-namespace ad::core {
-/// Test-only back door: put units and owners where a scenario needs them
-/// without playing the turns that would get there.
-struct CampaignAccess {
-  static UnitId spawn(Campaign& c, UnitTypeId type, CityId city) { return c.spawn(type, city); }
-  static void setOwner(Campaign& c, CityId city, CountryIndex owner) { c.changeOwner(city, owner); }
-  static void setFunds(Campaign& c, PlayerId p, long long funds) { c.players_[static_cast<std::size_t>(p)].funds = funds; }
-};
-} // namespace ad::core
 
 namespace {
 
@@ -79,10 +70,15 @@ TEST_CASE("campaign: setup - one player per country, humans first, seeded AI ord
   CHECK(c.currentPlayer() == fr);
   CHECK(c.round() == 1);
   CHECK(c.phase() == Phase::Playing);
-  // every city starts with its own country and no units
+  // every city starts with its own country and its home guard
   for (const auto& city : w.cities()) {
     CHECK(c.owner(city.id) == city.country);
-    CHECK(c.unitsIn(city.id).empty());
+    const int guard = kHomeGuardBase + city.tier + (city.capital ? kHomeGuardCapitalBonus : 0);
+    CHECK(static_cast<int>(c.unitsIn(city.id).size()) == guard);
+    for (const UnitId id : c.unitsIn(city.id)) {
+      CHECK(c.unit(id)->type == *realCatalog().byKey("soldier"));
+      CHECK_FALSE(c.unit(id)->acted);
+    }
   }
   // the same seed reproduces the order, another seed changes it
   Campaign same(w, realCatalog(), settingsFor({fr}, 42));
@@ -157,6 +153,7 @@ TEST_CASE("campaign: recruit") {
   const auto& w = realWorld();
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   const long long funds = c.player(fr).funds;
   const auto tank = type("tank");
@@ -180,6 +177,7 @@ TEST_CASE("campaign: move") {
   const auto& w = realWorld();
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   const CityId lyon = ownNeighbour(c, paris, fr);
   REQUIRE(lyon >= 0);
@@ -215,6 +213,7 @@ TEST_CASE("campaign: attacking an undefended city captures it at once") {
   const auto& w = realWorld();
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   const CityId target = foreignNeighbour(c, paris, fr);
   const CountryIndex victim = c.owner(target);
@@ -241,6 +240,7 @@ TEST_CASE("campaign: a defended attack needs a battle and blocks other commands"
   const auto& w = realWorld();
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   const CityId target = foreignNeighbour(c, paris, fr);
   const CountryIndex victim = c.owner(target);
@@ -293,6 +293,7 @@ TEST_CASE("campaign: the side cap trims the defender, never the attacker") {
   const auto& w = realWorld();
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   const CityId target = foreignNeighbour(c, paris, fr);
   for (int i = 0; i < 50; ++i) CampaignAccess::spawn(c, type("soldier"), target);
@@ -318,6 +319,7 @@ TEST_CASE("campaign: capital loot and elimination") {
   // find a one-city country linked to a French-owned city
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   CityId from = -1, target = -1;
   for (const CityId own : w.country(fr).cities) {
     for (const CityId n : w.neighbours(own)) {
@@ -368,6 +370,7 @@ TEST_CASE("campaign: rounds - acted flags reset, income paid at the round start"
   const auto& w = realWorld();
   const auto fr = country("fr");
   Campaign c(w, realCatalog(), settingsFor({fr}));
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   const CityId lyon = ownNeighbour(c, paris, fr);
   c.apply(Recruit{fr, paris, type("soldier"), 1});
@@ -437,6 +440,7 @@ TEST_CASE("campaign: identical command sequences replay to identical state hashe
   const auto fr = country("fr");
   const auto play = [&](std::uint64_t seed, bool extra) {
     Campaign c(w, realCatalog(), settingsFor({fr}, seed));
+    CampaignAccess::disarm(c);
     const CityId paris = w.country(fr).capital;
     c.apply(Recruit{fr, paris, type("soldier"), 4});
     const CityId target = foreignNeighbour(c, paris, fr);

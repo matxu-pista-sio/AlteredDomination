@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include "ad/core/battle.hpp"
+#include "ad/core/campaign.hpp"
 #include "ad/core/catalog.hpp"
 #include "ad/core/world.hpp"
 
@@ -42,3 +44,41 @@ inline const ad::core::Catalog& realCatalog() {
 }
 
 } // namespace ad::test
+
+namespace ad::core {
+
+/// Test-only back door into Campaign: put units and owners where a scenario
+/// needs them without playing the turns that would get there.
+struct CampaignAccess {
+  static UnitId spawn(Campaign& c, UnitTypeId type, CityId city) { return c.spawn(type, city); }
+  static void setOwner(Campaign& c, CityId city, CountryIndex owner) { c.changeOwner(city, owner); }
+  static void setFunds(Campaign& c, PlayerId p, long long funds) { c.players_[static_cast<std::size_t>(p)].funds = funds; }
+  static void setPersonality(Campaign& c, PlayerId p, Personality per) { c.players_[static_cast<std::size_t>(p)].personality = per; }
+  static void skipTo(Campaign& c, PlayerId p) {
+    while (c.currentPlayer() != p) c.apply(EndTurn{c.currentPlayer()});
+  }
+  static void clearCity(Campaign& c, CityId city) {
+    const std::vector<UnitId> ids = c.unitsIn(city);
+    for (const UnitId id : ids) c.destroy(id);
+  }
+  /// Remove every unit in the world (the home guard included), so a scenario
+  /// starts from empty cities.
+  static void disarm(Campaign& c) {
+    for (const auto& city : c.world().cities()) clearCity(c, city.id);
+  }
+};
+
+/// Test-only back door into Battle: set a board up directly.
+struct BattleAccess {
+  static void clearBoard(Battle& b) {
+    for (auto& u : b.units_)
+      if (u.alive) b.clearCell(u.cell);
+  }
+  static void place(Battle& b, int idx, Cell c) { b.put(idx, c); }
+  static void setGeneral(Battle& b, int idx, bool g) { b.units_[static_cast<std::size_t>(idx)].general = g; }
+  static void startPlay(Battle& b) { b.startPlay(); }
+  static void setQuiet(Battle& b, int q) { b.quiet_ = q; }
+  static void setAlive(Battle& b, int idx, bool alive) { b.units_[static_cast<std::size_t>(idx)].alive = alive; }
+};
+
+} // namespace ad::core

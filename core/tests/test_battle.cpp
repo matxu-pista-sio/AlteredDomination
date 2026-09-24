@@ -9,20 +9,6 @@
 using namespace ad::core;
 using ad::test::realCatalog;
 
-namespace ad::core {
-/// Test-only back door: set a board up directly instead of deploying.
-struct BattleAccess {
-  static void clearBoard(Battle& b) {
-    for (auto& u : b.units_)
-      if (u.alive) b.clearCell(u.cell);
-  }
-  static void place(Battle& b, int idx, Cell c) { b.put(idx, c); }
-  static void setGeneral(Battle& b, int idx, bool g) { b.units_[static_cast<std::size_t>(idx)].general = g; }
-  static void startPlay(Battle& b) { b.startPlay(); }
-  static void setQuiet(Battle& b, int q) { b.quiet_ = q; }
-  static void setAlive(Battle& b, int idx, bool alive) { b.units_[static_cast<std::size_t>(idx)].alive = alive; }
-};
-} // namespace ad::core
 
 namespace {
 

@@ -23,6 +23,7 @@ Campaign playedCampaign() {
   s.seed = 99;
   s.humans = {fr};
   Campaign c(w, realCatalog(), s);
+  CampaignAccess::disarm(c);
   const CityId paris = w.country(fr).capital;
   c.apply(Recruit{fr, paris, type("tank"), 2});
   c.apply(Recruit{fr, paris, type("soldier"), 3});

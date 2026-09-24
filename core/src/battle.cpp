@@ -183,6 +183,42 @@ std::vector<Cell> Battle::legalStrikes(Cell from) const {
   return out;
 }
 
+bool Battle::canAct(Side s) const {
+  for (const auto& u : units_) {
+    if (u.side != s || !u.alive || u.acted) continue;
+    const auto& type = catalog_->type(u.type);
+    for (const auto& m : type.moves) {
+      const Offset o = oriented(s, m.to);
+      const Cell to{u.cell.x + o.dx, u.cell.y + o.dy};
+      if (inside(to) && at(to) == -1 && pathClear(u.cell, s, m.path)) return true;
+    }
+    for (const auto& st : type.strikes) {
+      const Offset o = oriented(s, st.to);
+      const Cell to{u.cell.x + o.dx, u.cell.y + o.dy};
+      if (!inside(to)) continue;
+      const int t = at(to);
+      if (t < 0 || unit(t).side == s) continue;
+      if (canAffect(st.affects, catalog_->type(unit(t).type).classes) && pathClear(u.cell, s, st.path)) return true;
+    }
+  }
+  return false;
+}
+
+bool Battle::threatened(Cell cell, Side enemy) const {
+  const int victim = at(cell);
+  if (victim < 0) return false;
+  const ClassMask classes = catalog_->type(unit(victim).type).classes;
+  for (const auto& u : units_) {
+    if (u.side != enemy || !u.alive) continue;
+    for (const auto& st : catalog_->type(u.type).strikes) {
+      const Offset o = oriented(enemy, st.to);
+      if (u.cell.x + o.dx != cell.x || u.cell.y + o.dy != cell.y) continue;
+      if (canAffect(st.affects, classes) && pathClear(u.cell, enemy, st.path)) return true;
+    }
+  }
+  return false;
+}
+
 std::vector<BattleAction> Battle::legalActions(Side s) const {
   std::vector<BattleAction> out;
   if (phase_ != BattlePhase::Play || side_ != s || actionsLeft_ <= 0) return out;
@@ -360,7 +396,7 @@ void Battle::beginTurn(Side s) {
 
 void Battle::afterAction() {
   if (phase_ != BattlePhase::Play) return;
-  if (actionsLeft_ <= 0 || legalActions(side_).size() <= 1) switchTurn();
+  if (actionsLeft_ <= 0 || !canAct(side_)) switchTurn();
 }
 
 /// The current side's turn is over: count it, check the caps, hand over.
@@ -377,7 +413,7 @@ void Battle::switchTurn() {
 
 /// A side with nothing to do passes at once; both stuck is a draw.
 void Battle::autoPass() {
-  if (phase_ != BattlePhase::Play || legalActions(side_).size() > 1) return;
+  if (phase_ != BattlePhase::Play || canAct(side_)) return;
   ++quiet_;
   if (turn_ >= kBattleTurnCap || quiet_ >= kBattleQuietTurns) {
     finish(BattleWinner::Draw);
@@ -385,7 +421,7 @@ void Battle::autoPass() {
   }
   ++turn_;
   beginTurn(other(side_));
-  if (legalActions(side_).size() <= 1) finish(BattleWinner::Draw);
+  if (!canAct(side_)) finish(BattleWinner::Draw);
 }
 
 void Battle::finish(BattleWinner w) {
